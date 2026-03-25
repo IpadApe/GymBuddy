@@ -1,0 +1,452 @@
+package com.gymtracker.ui.screens.progress
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gymtracker.GymTrackerApp
+import com.gymtracker.data.database.entities.*
+import com.gymtracker.data.model.OverloadSuggestion
+import com.gymtracker.ui.components.*
+import com.gymtracker.ui.theme.*
+import com.gymtracker.util.FormatUtils
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import java.util.*
+
+data class ProgressState(
+    val sessions: List<WorkoutSessionEntity> = emptyList(),
+    val monthlyVolume: Double = 0.0,
+    val weeklyVolume: Double = 0.0,
+    val weeklyCount: Int = 0,
+    val monthlyCount: Int = 0,
+    val avgDuration: Int = 0,
+    val recentPRs: List<PersonalRecordEntity> = emptyList(),
+    val overloadSuggestions: List<OverloadSuggestion> = emptyList(),
+    val measurements: List<BodyMeasurementEntity> = emptyList(),
+    val calendarDays: Map<Int, Boolean> = emptyMap(), // dayOfMonth -> hasWorkout
+    val selectedMonth: Int = Calendar.getInstance().get(Calendar.MONTH),
+    val selectedYear: Int = Calendar.getInstance().get(Calendar.YEAR),
+    val useMetric: Boolean = true,
+    val showMeasurementDialog: Boolean = false
+)
+
+class ProgressViewModel(private val app: GymTrackerApp) : ViewModel() {
+    private val repo = app.repository
+    private val _state = MutableStateFlow(ProgressState())
+    val state: StateFlow<ProgressState> = _state.asStateFlow()
+
+    init {
+        loadData()
+    }
+
+    private fun loadData() {
+        val weekStart = FormatUtils.getWeekStart()
+        val monthStart = FormatUtils.getMonthStart()
+        val now = System.currentTimeMillis()
+
+        viewModelScope.launch {
+            repo.getAllSessions().collect { _state.update { s -> s.copy(sessions = it) } }
+        }
+        viewModelScope.launch {
+            repo.getTotalVolume(weekStart, now).collect { _state.update { s -> s.copy(weeklyVolume = it) } }
+        }
+        viewModelScope.launch {
+            repo.getTotalVolume(monthStart, now).collect { _state.update { s -> s.copy(monthlyVolume = it) } }
+        }
+        viewModelScope.launch {
+            repo.getSessionCount(weekStart, now).collect { _state.update { s -> s.copy(weeklyCount = it) } }
+        }
+        viewModelScope.launch {
+            repo.getSessionCount(monthStart, now).collect { _state.update { s -> s.copy(monthlyCount = it) } }
+        }
+        viewModelScope.launch {
+            repo.getAvgDuration(monthStart, now).collect { _state.update { s -> s.copy(avgDuration = it) } }
+        }
+        viewModelScope.launch {
+            repo.getRecentPRs(10).collect { _state.update { s -> s.copy(recentPRs = it) } }
+        }
+        viewModelScope.launch {
+            repo.getAllMeasurements().collect { _state.update { s -> s.copy(measurements = it) } }
+        }
+        viewModelScope.launch {
+            repo.getPreferences().collect { p -> _state.update { s -> s.copy(useMetric = p?.useMetric ?: true) } }
+        }
+        viewModelScope.launch {
+            val suggestions = repo.getProgressiveOverloadSuggestions()
+            _state.update { it.copy(overloadSuggestions = suggestions) }
+        }
+        loadCalendar()
+    }
+
+    private fun loadCalendar() {
+        viewModelScope.launch {
+            val s = _state.value
+            val start = FormatUtils.getMonthStartMillis(s.selectedYear, s.selectedMonth)
+            val end = FormatUtils.getMonthEndMillis(s.selectedYear, s.selectedMonth)
+            repo.getSessionsBetween(start, end).collect { sessions ->
+                val days = mutableMapOf<Int, Boolean>()
+                sessions.forEach {
+                    val cal = Calendar.getInstance()
+                    cal.timeInMillis = it.startTime
+                    days[cal.get(Calendar.DAY_OF_MONTH)] = true
+                }
+                _state.update { it.copy(calendarDays = days) }
+            }
+        }
+    }
+
+    fun changeMonth(delta: Int) {
+        val cal = Calendar.getInstance()
+        cal.set(_state.value.selectedYear, _state.value.selectedMonth, 1)
+        cal.add(Calendar.MONTH, delta)
+        _state.update { it.copy(selectedMonth = cal.get(Calendar.MONTH), selectedYear = cal.get(Calendar.YEAR)) }
+        loadCalendar()
+    }
+
+    fun showMeasurementDialog() { _state.update { it.copy(showMeasurementDialog = true) } }
+    fun hideMeasurementDialog() { _state.update { it.copy(showMeasurementDialog = false) } }
+
+    fun saveMeasurement(bodyWeight: Double?, bodyFat: Double?, chest: Double?, waist: Double?,
+                        leftArm: Double?, rightArm: Double?) {
+        viewModelScope.launch {
+            repo.insertMeasurement(
+                BodyMeasurementEntity(
+                    date = System.currentTimeMillis(),
+                    bodyWeight = bodyWeight,
+                    bodyFatPercentage = bodyFat,
+                    chest = chest,
+                    waist = waist,
+                    leftArm = leftArm,
+                    rightArm = rightArm
+                )
+            )
+            hideMeasurementDialog()
+        }
+    }
+}
+
+class ProgressViewModelFactory : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        @Suppress("UNCHECKED_CAST")
+        return ProgressViewModel(GymTrackerApp.instance) as T
+    }
+}
+
+@Composable
+fun ProgressScreen(
+    onExerciseClick: (Long) -> Unit,
+    viewModel: ProgressViewModel = viewModel(factory = ProgressViewModelFactory())
+) {
+    val state by viewModel.state.collectAsState()
+    val months = listOf("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            Text(
+                "Progress",
+                style = MaterialTheme.typography.displaySmall,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        // Stats overview
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatCard("Week Volume", FormatUtils.formatVolume(state.weeklyVolume, state.useMetric),
+                    Icons.Filled.FitnessCenter, NeonBlue, Modifier.weight(1f))
+                StatCard("Month Volume", FormatUtils.formatVolume(state.monthlyVolume, state.useMetric),
+                    Icons.Filled.TrendingUp, NeonGreen, Modifier.weight(1f))
+            }
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatCard("Sessions/Week", "${state.weeklyCount}", Icons.Filled.CalendarMonth, NeonOrange, Modifier.weight(1f))
+                StatCard("Avg Duration", if(state.avgDuration>0) FormatUtils.formatDuration(state.avgDuration) else "--",
+                    Icons.Filled.Timer, NeonPurple, Modifier.weight(1f))
+            }
+        }
+
+        // Calendar
+        item {
+            SectionHeader(title = "Workout Calendar")
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { viewModel.changeMonth(-1) }) {
+                            Icon(Icons.Filled.ChevronLeft, "Previous")
+                        }
+                        Text(
+                            "${months[state.selectedMonth]} ${state.selectedYear}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(onClick = { viewModel.changeMonth(1) }) {
+                            Icon(Icons.Filled.ChevronRight, "Next")
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Day labels
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        listOf("M","T","W","T","F","S","S").forEach {
+                            Text(
+                                it, modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Calendar grid
+                    val daysInMonth = FormatUtils.getDaysInMonth(state.selectedYear, state.selectedMonth)
+                    val cal = Calendar.getInstance().apply { set(state.selectedYear, state.selectedMonth, 1) }
+                    val firstDayOfWeek = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7 // Monday=0
+
+                    val totalCells = firstDayOfWeek + daysInMonth
+                    val rows = (totalCells + 6) / 7
+
+                    for (row in 0 until rows) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            for (col in 0 until 7) {
+                                val cellIndex = row * 7 + col
+                                val day = cellIndex - firstDayOfWeek + 1
+                                if (day in 1..daysInMonth) {
+                                    val hasWorkout = state.calendarDays.containsKey(day)
+                                    val isToday = day == Calendar.getInstance().get(Calendar.DAY_OF_MONTH) &&
+                                            state.selectedMonth == Calendar.getInstance().get(Calendar.MONTH) &&
+                                            state.selectedYear == Calendar.getInstance().get(Calendar.YEAR)
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .aspectRatio(1f)
+                                            .padding(2.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                when {
+                                                    hasWorkout -> MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                                                    isToday -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                                    else -> Color.Transparent
+                                                }
+                                            ),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            "$day",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (hasWorkout) Color.White else MaterialTheme.colorScheme.onSurface,
+                                            fontSize = 11.sp
+                                        )
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Progressive Overload Suggestions
+        if (state.overloadSuggestions.isNotEmpty()) {
+            item { SectionHeader(title = "Progressive Overload") }
+            items(state.overloadSuggestions.take(5)) { suggestion ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = NeonGreen.copy(alpha = 0.08f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.TrendingUp, null, tint = NeonGreen, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(suggestion.exerciseName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Text(suggestion.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Recent PRs
+        if (state.recentPRs.isNotEmpty()) {
+            item { SectionHeader(title = "Recent Personal Records") }
+            items(state.recentPRs.take(5)) { pr ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = NeonYellow.copy(alpha = 0.08f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Filled.EmojiEvents, null, tint = NeonYellow, modifier = Modifier.size(24.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(pr.recordType, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Text(FormatUtils.formatDate(pr.achievedAt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Text(
+                            FormatUtils.formatWeight(pr.value, state.useMetric),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = NeonYellow
+                        )
+                    }
+                }
+            }
+        }
+
+        // Body Measurements
+        item {
+            SectionHeader(
+                title = "Body Measurements",
+                action = "Add",
+                onAction = { viewModel.showMeasurementDialog() }
+            )
+        }
+        if (state.measurements.isEmpty()) {
+            item {
+                EmptyState(
+                    icon = Icons.Filled.Straighten,
+                    title = "No measurements yet",
+                    subtitle = "Track your body measurements to see progress over time",
+                    actionLabel = "Add Measurement",
+                    onAction = { viewModel.showMeasurementDialog() }
+                )
+            }
+        } else {
+            items(state.measurements.take(5)) { m ->
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Text(FormatUtils.formatDate(m.date), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            m.bodyWeight?.let { MiniStat(Icons.Filled.MonitorWeight, FormatUtils.formatWeight(it, state.useMetric), "Weight") }
+                            m.bodyFatPercentage?.let { MiniStat(Icons.Filled.Percent, "${it}%", "Body Fat") }
+                            m.chest?.let { MiniStat(Icons.Filled.Straighten, FormatUtils.formatDistance(it, state.useMetric), "Chest") }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Workout History
+        item { SectionHeader(title = "Workout History") }
+        items(state.sessions.take(10)) { session ->
+            WorkoutSessionCard(
+                name = session.name,
+                date = FormatUtils.formatDate(session.startTime),
+                duration = FormatUtils.formatDuration(session.durationSeconds),
+                volume = FormatUtils.formatVolume(session.totalVolumeKg, state.useMetric),
+                splitType = session.splitType,
+                onClick = {}
+            )
+        }
+
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+    }
+
+    // Measurement Dialog
+    if (state.showMeasurementDialog) {
+        MeasurementDialog(
+            useMetric = state.useMetric,
+            onSave = { bw, bf, c, w, la, ra -> viewModel.saveMeasurement(bw, bf, c, w, la, ra) },
+            onDismiss = { viewModel.hideMeasurementDialog() }
+        )
+    }
+}
+
+@Composable
+fun MeasurementDialog(
+    useMetric: Boolean,
+    onSave: (Double?, Double?, Double?, Double?, Double?, Double?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var bodyWeight by remember { mutableStateOf("") }
+    var bodyFat by remember { mutableStateOf("") }
+    var chest by remember { mutableStateOf("") }
+    var waist by remember { mutableStateOf("") }
+    var leftArm by remember { mutableStateOf("") }
+    var rightArm by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Measurement") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberInputField(bodyWeight, { bodyWeight = it }, "Body Weight",
+                        suffix = if(useMetric) "kg" else "lbs", modifier = Modifier.weight(1f))
+                    NumberInputField(bodyFat, { bodyFat = it }, "Body Fat", suffix = "%", modifier = Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberInputField(chest, { chest = it }, "Chest",
+                        suffix = if(useMetric) "cm" else "in", modifier = Modifier.weight(1f))
+                    NumberInputField(waist, { waist = it }, "Waist",
+                        suffix = if(useMetric) "cm" else "in", modifier = Modifier.weight(1f))
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberInputField(leftArm, { leftArm = it }, "L Arm",
+                        suffix = if(useMetric) "cm" else "in", modifier = Modifier.weight(1f))
+                    NumberInputField(rightArm, { rightArm = it }, "R Arm",
+                        suffix = if(useMetric) "cm" else "in", modifier = Modifier.weight(1f))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                onSave(
+                    bodyWeight.toDoubleOrNull(), bodyFat.toDoubleOrNull(),
+                    chest.toDoubleOrNull(), waist.toDoubleOrNull(),
+                    leftArm.toDoubleOrNull(), rightArm.toDoubleOrNull()
+                )
+            }) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}

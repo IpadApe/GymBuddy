@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GymTracker</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_workout">Workout</string>
+    <string name="nav_exercises">Exercises</string>
+    <string name="nav_progress">Progress</string>
+    <string name="nav_settings">Settings</string>
+</resources>
