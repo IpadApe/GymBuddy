@@ -14,11 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -347,7 +348,7 @@ fun ProgressScreen(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        VolumeBarChart(
+                        VolumeLineChart(
                             data = state.dailyVolume,
                             useMetric = state.useMetric,
                             modifier = Modifier.fillMaxWidth()
@@ -460,13 +461,15 @@ fun ProgressScreen(
 }
 
 @Composable
-fun VolumeBarChart(
+fun VolumeLineChart(
     data: List<DailyVolumePoint>,
     useMetric: Boolean,
     modifier: Modifier = Modifier
 ) {
+    if (data.size < 2) return
     val maxVal = data.maxOf { it.volumeKg }.coerceAtLeast(1.0)
     val primaryColor = MaterialTheme.colorScheme.primary
+    val surfaceColor = MaterialTheme.colorScheme.surface
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     Column(modifier = modifier) {
@@ -475,52 +478,69 @@ fun VolumeBarChart(
                 .fillMaxWidth()
                 .height(120.dp)
         ) {
-            val barCount = data.size
-            val slotWidth = size.width / barCount
-            val barWidth = slotWidth * 0.55f
-            val chartHeight = size.height
-
-            data.forEachIndexed { i, point ->
-                val barHeight = ((point.volumeKg / maxVal) * (chartHeight - 4.dp.toPx())).toFloat()
-                val x = i * slotWidth + (slotWidth - barWidth) / 2
-                val y = chartHeight - barHeight
-
-                drawRoundRect(
-                    color = primaryColor.copy(alpha = 0.75f),
-                    topLeft = Offset(x, y),
-                    size = Size(barWidth, barHeight),
-                    cornerRadius = CornerRadius(4.dp.toPx()),
-                    style = Fill
+            val n = data.size
+            val chartH = size.height - 4.dp.toPx()
+            val points = data.mapIndexed { i, pt ->
+                Offset(
+                    x = i * (size.width / (n - 1).toFloat()),
+                    y = chartH - (pt.volumeKg / maxVal * chartH).toFloat()
                 )
+            }
+
+            // Filled area under line
+            val fillPath = Path().apply {
+                moveTo(points.first().x, chartH)
+                points.forEach { lineTo(it.x, it.y) }
+                lineTo(points.last().x, chartH)
+                close()
+            }
+            drawPath(fillPath, color = primaryColor.copy(alpha = 0.12f))
+
+            // Line
+            val linePath = Path().apply {
+                moveTo(points.first().x, points.first().y)
+                points.drop(1).forEach { lineTo(it.x, it.y) }
+            }
+            drawPath(
+                linePath,
+                color = primaryColor,
+                style = Stroke(
+                    width = 2.5.dp.toPx(),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round
+                )
+            )
+
+            // Dots
+            points.forEach { p ->
+                drawCircle(primaryColor, radius = 4.dp.toPx(), center = p)
+                drawCircle(surfaceColor, radius = 2.dp.toPx(), center = p)
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
-        // X-axis labels: show first, middle and last
         Row(modifier = Modifier.fillMaxWidth()) {
-            if (data.isNotEmpty()) {
+            Text(
+                data.first().label,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = labelColor,
+                modifier = Modifier.weight(1f)
+            )
+            if (data.size > 2) {
                 Text(
-                    data.first().label,
+                    data[data.size / 2].label,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     color = labelColor,
-                    modifier = Modifier.weight(1f)
-                )
-                if (data.size > 2) {
-                    Text(
-                        data[data.size / 2].label,
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = labelColor,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                Text(
-                    data.last().label,
-                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                    color = labelColor,
-                    textAlign = TextAlign.End,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f)
                 )
             }
+            Text(
+                data.last().label,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = labelColor,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f)
+            )
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(

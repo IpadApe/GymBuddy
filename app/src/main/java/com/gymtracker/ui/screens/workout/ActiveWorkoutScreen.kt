@@ -16,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -140,6 +141,11 @@ class ActiveWorkoutViewModel(
 
     init {
         elapsedTimerJob = viewModelScope.launch {
+            // Resume from actual start time so timer is correct after background/recreate
+            val sess = repo.getSessionById(sessionId)
+            if (sess != null) {
+                _elapsedSeconds.value = ((System.currentTimeMillis() - sess.startTime) / 1000).toInt()
+            }
             while (true) {
                 delay(1000)
                 _elapsedSeconds.value++
@@ -304,10 +310,10 @@ class ActiveWorkoutViewModel(
     val finalElapsedSeconds = _finalElapsedSeconds.asStateFlow()
 
     fun finishAndLoadStats() {
-        // Snapshot + cancel SYNCHRONOUSLY before launching the suspend work
         _finalElapsedSeconds.value = _elapsedSeconds.value
         elapsedTimerJob?.cancel()
         cancelRestTimer()
+        app.activeWorkoutSessionId.value = null
         viewModelScope.launch {
             repo.finishWorkoutSession(sessionId)
             _workoutCount.value = repo.getCompletedWorkoutCount()
@@ -335,6 +341,7 @@ class ActiveWorkoutViewModelFactory(
 fun ActiveWorkoutScreen(
     sessionId: Long,
     onFinish: () -> Unit,
+    onRunInBackground: () -> Unit,
     app: GymTrackerApp
 ) {
     val viewModel: ActiveWorkoutViewModel = viewModel(
@@ -355,11 +362,17 @@ fun ActiveWorkoutScreen(
 
     var showExercisePicker by remember { mutableStateOf(false) }
     var showFinishDialog by remember { mutableStateOf(false) }
+    var showBackDialog by remember { mutableStateOf(false) }
     var showSummary by remember { mutableStateOf(false) }
     var replaceTargetExercise by remember { mutableStateOf<WorkoutExerciseEntity?>(null) }
     var historyExercise by remember { mutableStateOf<ExerciseWithSetsAndInfo?>(null) }
     // Multi-add: track which exercises were added in this picker session
     var addedInPicker by remember { mutableStateOf(setOf<Long>()) }
+
+    // Intercept back gesture — show options instead of silently discarding the workout
+    BackHandler(enabled = !showSummary) {
+        showBackDialog = true
+    }
 
     Scaffold(
         topBar = {
@@ -540,6 +553,52 @@ fun ActiveWorkoutScreen(
                     Text(if (hasUnfinished) "No, Go Back" else "Cancel")
                 }
             }
+        )
+    }
+
+    // Back gesture dialog
+    if (showBackDialog) {
+        AlertDialog(
+            onDismissRequest = { showBackDialog = false },
+            title = { Text("Workout in Progress") },
+            text = { Text("Your workout is still running. What would you like to do?") },
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            app.activeWorkoutSessionId.value = sessionId
+                            showBackDialog = false
+                            onRunInBackground()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Run in Background")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.finishAndLoadStats()
+                            showBackDialog = false
+                            showSummary = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("Stop Workout")
+                    }
+                    TextButton(
+                        onClick = { showBackDialog = false },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            },
+            dismissButton = null
         )
     }
 

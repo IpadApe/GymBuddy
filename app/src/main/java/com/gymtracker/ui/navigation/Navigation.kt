@@ -141,7 +141,10 @@ fun MainNavigation(startOnboarding: Boolean = false) {
                     onStartWorkout = { navController.navigate(Screen.WorkoutSetup.route) },
                     onViewProgress = { navController.navigate(Screen.Progress.route) },
                     onViewBodyMap = { navController.navigate(Screen.BodyMap.route) },
-                    onNavigateToExercises = { navController.navigate(Screen.Exercises.route) }
+                    onNavigateToExercises = { navController.navigate(Screen.Exercises.route) },
+                    onResumeWorkout = { sessionId ->
+                        navController.navigate(Screen.ActiveWorkout.createRoute(sessionId))
+                    }
                 )
             }
 
@@ -186,6 +189,9 @@ fun MainNavigation(startOnboarding: Boolean = false) {
                         navController.navigate(Screen.Home.route) {
                             popUpTo(Screen.Home.route) { inclusive = true }
                         }
+                    },
+                    onRunInBackground = {
+                        navController.popBackStack(Screen.Home.route, false)
                     },
                     app = GymTrackerApp.instance
                 )

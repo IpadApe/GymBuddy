@@ -9,12 +9,16 @@ import com.gymtracker.data.repository.GymRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class GymTrackerApp : Application() {
 
     val database by lazy { AppDatabase.getInstance(this) }
     val repository by lazy { GymRepository(database) }
+
+    // Non-null while a workout is running in background
+    val activeWorkoutSessionId = MutableStateFlow<Long?>(null)
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 

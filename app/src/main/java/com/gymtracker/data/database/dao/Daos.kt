@@ -250,6 +250,11 @@ interface PersonalRecordDao {
                e.name as exerciseName
         FROM personal_records pr
         INNER JOIN exercises e ON pr.exerciseId = e.id
+        WHERE pr.achievedAt = (
+            SELECT MAX(pr2.achievedAt) FROM personal_records pr2
+            WHERE pr2.exerciseId = pr.exerciseId
+        )
+        GROUP BY pr.exerciseId
         ORDER BY pr.achievedAt DESC
         LIMIT :limit
     """)
