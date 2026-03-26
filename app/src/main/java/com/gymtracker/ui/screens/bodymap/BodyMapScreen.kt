@@ -7,6 +7,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -91,7 +93,7 @@ fun BodyMapScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Muscle Map") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, "Back") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
@@ -259,9 +261,9 @@ fun BodyMapDiagram(
 }
 
 // ─────────────────────────────────────────────────────────────
-// FRONT overlays  (coordinates as fraction of canvas W × H)
-// Image layout: front figure occupies x ≈ 3%–47%, y ≈ 1%–97%
-//               figure center ≈ x=25%
+// FRONT overlays
+// Reference image: front figure x=4%–46%, y=2%–96%, centre x≈25%
+// All coordinates measured from the uploaded line-art PNG.
 // ─────────────────────────────────────────────────────────────
 private fun DrawScope.drawFrontOverlays(
     W: Float, H: Float,
@@ -274,45 +276,47 @@ private fun DrawScope.drawFrontOverlays(
             size    = Size(2 * rx * W, 2 * ry * H))
     }
 
-    // Deltoids / Shoulders
-    o(0.095f, 0.195f, 0.038f, 0.060f, MuscleGroup.SHOULDERS)   // left
-    o(0.405f, 0.195f, 0.038f, 0.060f, MuscleGroup.SHOULDERS)   // right
+    // Deltoids — round shoulder cap, sits at outer shoulder
+    o(0.092f, 0.205f, 0.028f, 0.045f, MuscleGroup.SHOULDERS)   // left
+    o(0.408f, 0.205f, 0.028f, 0.045f, MuscleGroup.SHOULDERS)   // right
 
-    // Chest
-    o(0.175f, 0.240f, 0.058f, 0.073f, MuscleGroup.CHEST)       // left pec
-    o(0.325f, 0.240f, 0.058f, 0.073f, MuscleGroup.CHEST)       // right pec
+    // Pectorals — D-shaped, sternum at ~x=0.25
+    o(0.172f, 0.245f, 0.050f, 0.060f, MuscleGroup.CHEST)       // left pec
+    o(0.328f, 0.245f, 0.050f, 0.060f, MuscleGroup.CHEST)       // right pec
 
-    // Biceps
-    o(0.068f, 0.360f, 0.030f, 0.083f, MuscleGroup.BICEPS)      // left
-    o(0.432f, 0.360f, 0.030f, 0.083f, MuscleGroup.BICEPS)      // right
+    // Biceps — narrow oval on front of upper arm
+    o(0.068f, 0.355f, 0.024f, 0.068f, MuscleGroup.BICEPS)      // left
+    o(0.432f, 0.355f, 0.024f, 0.068f, MuscleGroup.BICEPS)      // right
 
     // Forearms
-    o(0.057f, 0.510f, 0.025f, 0.068f, MuscleGroup.FOREARMS)    // left
-    o(0.443f, 0.510f, 0.025f, 0.068f, MuscleGroup.FOREARMS)    // right
+    o(0.058f, 0.495f, 0.020f, 0.055f, MuscleGroup.FOREARMS)    // left
+    o(0.442f, 0.495f, 0.020f, 0.055f, MuscleGroup.FOREARMS)    // right
 
-    // Abs — 2 columns × 3 rows
+    // Abs — 2 columns × 3 rows (6-pack grid)
     val ac = color(MuscleGroup.ABS); val aa = alpha(MuscleGroup.ABS)
-    for (cx in listOf(0.218f, 0.282f)) {
-        for (cy in listOf(0.340f, 0.405f, 0.468f)) {
-            drawOval(ac.copy(aa), Offset((cx - 0.027f) * W, (cy - 0.030f) * H),
-                Size(0.054f * W, 0.060f * H))
+    for (cx in listOf(0.217f, 0.283f)) {
+        for (cy in listOf(0.338f, 0.396f, 0.452f)) {
+            drawOval(ac.copy(aa),
+                Offset((cx - 0.020f) * W, (cy - 0.024f) * H),
+                Size(0.040f * W, 0.048f * H))
         }
     }
-    // Obliques
-    o(0.155f, 0.435f, 0.025f, 0.068f, MuscleGroup.ABS)         // left
-    o(0.345f, 0.435f, 0.025f, 0.068f, MuscleGroup.ABS)         // right
+    // Obliques — on sides of rectus abdominis
+    o(0.155f, 0.415f, 0.018f, 0.055f, MuscleGroup.ABS)         // left
+    o(0.345f, 0.415f, 0.018f, 0.055f, MuscleGroup.ABS)         // right
 
-    // Quads
-    o(0.170f, 0.670f, 0.048f, 0.100f, MuscleGroup.QUADS)       // left
-    o(0.330f, 0.670f, 0.048f, 0.100f, MuscleGroup.QUADS)       // right
+    // Quads — upper thigh only (crotch→knee = y≈0.53–0.72, centre≈0.62)
+    o(0.166f, 0.625f, 0.038f, 0.072f, MuscleGroup.QUADS)       // left
+    o(0.334f, 0.625f, 0.038f, 0.072f, MuscleGroup.QUADS)       // right
 
-    // Tibialis anterior (front of shin)
-    o(0.163f, 0.855f, 0.020f, 0.058f, MuscleGroup.CALVES)      // left
-    o(0.337f, 0.855f, 0.020f, 0.058f, MuscleGroup.CALVES)      // right
+    // Tibialis anterior — narrow strip on front of shin (knee→ankle = y≈0.73–0.90)
+    o(0.163f, 0.820f, 0.015f, 0.042f, MuscleGroup.CALVES)      // left
+    o(0.337f, 0.820f, 0.015f, 0.042f, MuscleGroup.CALVES)      // right
 }
 
 // ─────────────────────────────────────────────────────────────
-// BACK overlays  (back figure: x ≈ 53%–97%, center ≈ x=75%)
+// BACK overlays
+// Back figure x=54%–96%, y=2%–96%, centre x≈75%
 // ─────────────────────────────────────────────────────────────
 private fun DrawScope.drawBackOverlays(
     W: Float, H: Float,
@@ -326,35 +330,35 @@ private fun DrawScope.drawBackOverlays(
     }
 
     // Rear deltoids
-    o(0.595f, 0.195f, 0.038f, 0.060f, MuscleGroup.SHOULDERS)   // left (viewer's)
-    o(0.905f, 0.195f, 0.038f, 0.060f, MuscleGroup.SHOULDERS)   // right
+    o(0.592f, 0.205f, 0.028f, 0.045f, MuscleGroup.SHOULDERS)   // left
+    o(0.908f, 0.205f, 0.028f, 0.045f, MuscleGroup.SHOULDERS)   // right
 
-    // Trapezius (wide diamond, upper back)
-    o(0.750f, 0.230f, 0.112f, 0.083f, MuscleGroup.BACK)
+    // Trapezius — wide diamond from neck to mid-back
+    o(0.750f, 0.240f, 0.096f, 0.075f, MuscleGroup.BACK)
 
-    // Lats
-    o(0.622f, 0.385f, 0.053f, 0.103f, MuscleGroup.BACK)        // left lat
-    o(0.878f, 0.385f, 0.053f, 0.103f, MuscleGroup.BACK)        // right lat
+    // Lats — sweep from armpit down to lower back
+    o(0.618f, 0.375f, 0.044f, 0.088f, MuscleGroup.BACK)        // left
+    o(0.882f, 0.375f, 0.044f, 0.088f, MuscleGroup.BACK)        // right
 
-    // Triceps (back of upper arm)
-    o(0.574f, 0.360f, 0.030f, 0.083f, MuscleGroup.TRICEPS)     // left
-    o(0.926f, 0.360f, 0.030f, 0.083f, MuscleGroup.TRICEPS)     // right
+    // Triceps — back of upper arm
+    o(0.572f, 0.355f, 0.024f, 0.068f, MuscleGroup.TRICEPS)     // left
+    o(0.928f, 0.355f, 0.024f, 0.068f, MuscleGroup.TRICEPS)     // right
 
     // Forearms (back)
-    o(0.557f, 0.510f, 0.025f, 0.068f, MuscleGroup.FOREARMS)    // left
-    o(0.943f, 0.510f, 0.025f, 0.068f, MuscleGroup.FOREARMS)    // right
+    o(0.558f, 0.495f, 0.020f, 0.055f, MuscleGroup.FOREARMS)    // left
+    o(0.942f, 0.495f, 0.020f, 0.055f, MuscleGroup.FOREARMS)    // right
 
-    // Glutes
-    o(0.685f, 0.630f, 0.063f, 0.077f, MuscleGroup.GLUTES)      // left
-    o(0.815f, 0.630f, 0.063f, 0.077f, MuscleGroup.GLUTES)      // right
+    // Glutes — large rounded, y≈0.55–0.68
+    o(0.683f, 0.615f, 0.052f, 0.062f, MuscleGroup.GLUTES)      // left
+    o(0.817f, 0.615f, 0.052f, 0.062f, MuscleGroup.GLUTES)      // right
 
-    // Hamstrings
-    o(0.665f, 0.685f, 0.052f, 0.100f, MuscleGroup.HAMSTRINGS)  // left
-    o(0.835f, 0.685f, 0.052f, 0.100f, MuscleGroup.HAMSTRINGS)  // right
+    // Hamstrings — back of upper thigh, y≈0.55–0.72
+    o(0.665f, 0.635f, 0.042f, 0.078f, MuscleGroup.HAMSTRINGS)  // left
+    o(0.835f, 0.635f, 0.042f, 0.078f, MuscleGroup.HAMSTRINGS)  // right
 
-    // Calves (gastrocnemius diamond)
-    o(0.655f, 0.860f, 0.042f, 0.068f, MuscleGroup.CALVES)      // left
-    o(0.845f, 0.860f, 0.042f, 0.068f, MuscleGroup.CALVES)      // right
+    // Calves — gastrocnemius, y≈0.74–0.89
+    o(0.655f, 0.825f, 0.032f, 0.055f, MuscleGroup.CALVES)      // left
+    o(0.845f, 0.825f, 0.032f, 0.055f, MuscleGroup.CALVES)      // right
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -383,7 +387,7 @@ private fun muscleGradient(group: MuscleGroup, status: MuscleStatus): Brush {
 private fun muscleIcon(group: MuscleGroup): ImageVector = when (group) {
     MuscleGroup.ABS                                                          -> Icons.Filled.ViewModule
     MuscleGroup.QUADS, MuscleGroup.HAMSTRINGS,
-    MuscleGroup.GLUTES, MuscleGroup.CALVES                                  -> Icons.Filled.DirectionsRun
+    MuscleGroup.GLUTES, MuscleGroup.CALVES                                  -> Icons.AutoMirrored.Filled.DirectionsRun
     else                                                                     -> Icons.Filled.FitnessCenter
 }
 

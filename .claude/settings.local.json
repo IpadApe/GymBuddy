@@ -8,7 +8,12 @@
       "WebFetch(domain:icolorpalette.com)",
       "WebFetch(domain:mypersonaltrainerwebsite.com)",
       "WebFetch(domain:colorswall.com)",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "Bash(./gradlew assembleDebug)",
+      "WebFetch(domain:www.kindpng.com)",
+      "WebFetch(domain:www.pngwing.com)",
+      "WebFetch(domain:www.hiclipart.com)",
+      "WebFetch(domain:www.pngegg.com)"
     ]
   }
 }
