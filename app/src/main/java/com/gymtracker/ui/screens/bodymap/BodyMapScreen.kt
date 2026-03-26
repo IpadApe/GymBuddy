@@ -383,6 +383,7 @@ private fun muscleGradient(group: MuscleGroup, status: MuscleStatus): Brush {
         MuscleGroup.HAMSTRINGS -> Brush.linearGradient(listOf(Color(0xFF4A148C), Periwinkle))
         MuscleGroup.GLUTES     -> Brush.linearGradient(listOf(Color(0xFF5D1A00), Color(0xFFBF360C)))
         MuscleGroup.CALVES     -> Brush.linearGradient(listOf(Color(0xFF006064), Color(0xFF00BCD4)))
+        MuscleGroup.CARDIO     -> Brush.linearGradient(listOf(Color(0xFF7F0000), Color(0xFFEF5350)))
     }
 }
 

@@ -14,7 +14,8 @@ enum class MuscleGroup(val displayName: String) {
     QUADS("Quads"),
     HAMSTRINGS("Hamstrings"),
     GLUTES("Glutes"),
-    CALVES("Calves");
+    CALVES("Calves"),
+    CARDIO("Cardio");
 
     companion object {
         fun fromString(s: String): MuscleGroup? = entries.find {
@@ -52,7 +53,8 @@ enum class MovementType(val displayName: String) {
     HINGE("Hinge"),
     SQUAT("Squat"),
     CARRY("Carry"),
-    ISOLATION("Isolation")
+    ISOLATION("Isolation"),
+    CARDIO("Cardio")
 }
 
 enum class Difficulty(val displayName: String) {

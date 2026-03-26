@@ -19,7 +19,7 @@ import com.gymtracker.data.database.entities.*
         MuscleVolumeLogEntity::class,
         UserPreferencesEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

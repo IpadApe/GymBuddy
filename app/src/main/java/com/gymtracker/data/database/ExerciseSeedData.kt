@@ -305,6 +305,42 @@ object ExerciseSeedData {
             "1. Stand facing box.\n2. Jump onto box.\n3. Land softly.\n4. Step down and repeat."))
         add(exercise("Sled Push", "Quads", "Glutes,Calves", "Other", "Carry", "Intermediate",
             "1. Lean into sled.\n2. Drive with legs.\n3. Push for distance.\n4. Full lower body."))
+
+        // ═══════════════════════ CARDIO ═══════════════════════
+        add(exercise("Running", "Cardio", "", "Other", "Cardio", "Beginner",
+            "1. Warm up with 5 min brisk walk.\n2. Maintain steady pace, land mid-foot.\n3. Keep arms relaxed at 90°.\n4. Breathe rhythmically and cool down."))
+        add(exercise("Walking", "Cardio", "", "Other", "Cardio", "Beginner",
+            "1. Stand tall with core lightly engaged.\n2. Step heel-to-toe at a comfortable pace.\n3. Swing arms naturally.\n4. Aim for 30+ minutes for cardio benefit."))
+        add(exercise("Jogging", "Cardio", "", "Other", "Cardio", "Beginner",
+            "1. Start at a pace where you can hold a conversation.\n2. Land mid-foot beneath your hips.\n3. Keep shoulders relaxed.\n4. Build duration before increasing speed."))
+        add(exercise("Sprinting", "Cardio", "Quads,Hamstrings,Calves,Glutes", "Other", "Cardio", "Advanced",
+            "1. Drive off back foot explosively.\n2. Pump arms at 90° aggressively.\n3. Stay on balls of feet.\n4. Sprint 20–100 m, recover, repeat."))
+        add(exercise("Cycling", "Cardio", "Quads,Hamstrings,Calves", "Machine", "Cardio", "Beginner",
+            "1. Adjust seat so leg is almost fully extended at bottom.\n2. Pedal at a smooth cadence (70–90 rpm).\n3. Keep core engaged and back neutral.\n4. Use resistance to control intensity."))
+        add(exercise("Stationary Bike", "Cardio", "Quads,Hamstrings,Calves", "Machine", "Cardio", "Beginner",
+            "1. Set seat height to hip level.\n2. Pedal at 70–90 rpm.\n3. Vary resistance for interval training.\n4. Keep upper body relaxed."))
+        add(exercise("Rowing Machine", "Cardio", "Back,Shoulders,Biceps,Quads", "Machine", "Cardio", "Beginner",
+            "1. Sit with feet strapped, knees bent.\n2. Drive with legs first, then lean back, then pull arms.\n3. Return: arms out, lean forward, bend knees.\n4. Maintain smooth rhythm."))
+        add(exercise("Treadmill Walk/Run", "Cardio", "", "Machine", "Cardio", "Beginner",
+            "1. Set treadmill to warm-up speed.\n2. Maintain upright posture, slight forward lean.\n3. Adjust speed and incline as needed.\n4. Cool down last 5 minutes."))
+        add(exercise("Elliptical Trainer", "Cardio", "Quads,Hamstrings,Glutes", "Machine", "Cardio", "Beginner",
+            "1. Step onto pedals and grip handles lightly.\n2. Push and pull arms in sync with legs.\n3. Keep heels flat on pedals.\n4. Maintain steady cadence."))
+        add(exercise("Stair Climber", "Cardio", "Quads,Glutes,Calves", "Machine", "Cardio", "Intermediate",
+            "1. Step onto machine, keep slight forward lean.\n2. Drive through each step pushing down.\n3. Avoid leaning heavily on handrails.\n4. Adjust speed to maintain target heart rate."))
+        add(exercise("Jump Rope", "Cardio", "Calves,Shoulders", "Other", "Cardio", "Beginner",
+            "1. Hold handles at hip level, elbows slightly bent.\n2. Turn rope with wrists, not arms.\n3. Jump 1–2 inches off ground on balls of feet.\n4. Start with 30 sec on / 30 sec off."))
+        add(exercise("Swimming", "Cardio", "Back,Shoulders,Chest", "Other", "Cardio", "Beginner",
+            "1. Choose a stroke (freestyle, breaststroke, backstroke).\n2. Breathe rhythmically to one side.\n3. Keep body horizontal and core tight.\n4. Aim for consistent lap pace."))
+        add(exercise("Hiking", "Cardio", "Quads,Hamstrings,Calves,Glutes", "Other", "Cardio", "Beginner",
+            "1. Wear supportive footwear.\n2. Start on flat terrain, progress to inclines.\n3. Use trekking poles for balance on uneven ground.\n4. Maintain steady breathing pace."))
+        add(exercise("HIIT Intervals", "Cardio", "", "Bodyweight", "Cardio", "Intermediate",
+            "1. Choose 3–5 exercises (e.g. sprints, burpees, jumping jacks).\n2. Work at max effort for 20–40 sec.\n3. Rest for 10–20 sec.\n4. Repeat 4–8 rounds with 1–2 min rest between sets."))
+        add(exercise("Assault Bike", "Cardio", "Shoulders,Back", "Machine", "Cardio", "Intermediate",
+            "1. Adjust seat so legs almost fully extend.\n2. Push/pull handles in sync with legs.\n3. Sprint intervals: 20 sec max effort / 40 sec easy.\n4. Monitor RPM and maintain consistent output."))
+        add(exercise("Ski Erg", "Cardio", "Back,Shoulders,Abs/Core", "Machine", "Cardio", "Intermediate",
+            "1. Stand in front of machine, grab handles overhead.\n2. Pull handles down in a sweeping motion to hips.\n3. Hinge at hips as handles pass face.\n4. Return hands overhead smoothly and repeat."))
+        add(exercise("Shadow Boxing", "Cardio", "Shoulders,Abs/Core", "Bodyweight", "Cardio", "Beginner",
+            "1. Stand in boxing stance, fists up.\n2. Throw punches (jab, cross, hook, uppercut) in combinations.\n3. Move feet continuously — don't be flat-footed.\n4. 3 min rounds with 1 min rest."))
     }
 
     private fun exercise(

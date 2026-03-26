@@ -501,6 +501,7 @@ fun getMuscleColor(muscle: String): Color {
         "hamstrings" -> Color(0xFF4DB6AC)  // teal-green
         "glutes"     -> Color(0xFFFFCC02)  // gold
         "calves"     -> Color(0xFF80DEEA)  // cyan
+        "cardio"     -> Color(0xFFEF5350)  // red
         else         -> Color(0xFF888899)
     }
 }
