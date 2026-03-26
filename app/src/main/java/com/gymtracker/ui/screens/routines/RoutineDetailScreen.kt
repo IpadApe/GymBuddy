@@ -68,8 +68,24 @@ class RoutineDetailViewModel(private val app: GymTrackerApp, private val routine
         }
     }
 
-    fun startWorkoutFromDay(dayId: Long) {
-        // Implementation
+    fun startWorkoutFromDay(dayId: Long, onStarted: (Long) -> Unit) {
+        viewModelScope.launch {
+            val dayWithExercises = repo.getDayWithExercises(dayId) ?: return@launch
+            val routineName = _state.value.routine?.name ?: "Workout"
+            val sessionId = repo.startWorkoutSession(
+                name = "$routineName - ${dayWithExercises.day.dayName}",
+                splitType = dayWithExercises.day.splitType
+            )
+            dayWithExercises.exercises.sortedBy { it.orderIndex }.forEachIndexed { index, rde ->
+                val workoutExId = repo.addExerciseToWorkout(
+                    sessionId, rde.exerciseId, index, rde.restTimeSeconds
+                )
+                repeat(rde.targetSets) { setIndex ->
+                    repo.addSet(workoutExId, setIndex + 1)
+                }
+            }
+            onStarted(sessionId)
+        }
     }
 }
 
@@ -144,7 +160,7 @@ fun RoutineDetailScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             Button(
-                                onClick = { onStartWorkout(day.id) },
+                                onClick = { viewModel.startWorkoutFromDay(day.id, onStartWorkout) },
                                 shape = RoundedCornerShape(8.dp),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                             ) {

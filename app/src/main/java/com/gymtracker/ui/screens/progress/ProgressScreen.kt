@@ -14,7 +14,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,6 +28,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gymtracker.GymTrackerApp
+import com.gymtracker.data.database.dao.PRWithExerciseName
 import com.gymtracker.data.database.entities.*
 import com.gymtracker.data.model.OverloadSuggestion
 import com.gymtracker.ui.components.*
@@ -31,7 +36,10 @@ import com.gymtracker.ui.theme.*
 import com.gymtracker.util.FormatUtils
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.*
+
+data class DailyVolumePoint(val label: String, val volumeKg: Double)
 
 data class ProgressState(
     val sessions: List<WorkoutSessionEntity> = emptyList(),
@@ -40,14 +48,15 @@ data class ProgressState(
     val weeklyCount: Int = 0,
     val monthlyCount: Int = 0,
     val avgDuration: Int = 0,
-    val recentPRs: List<PersonalRecordEntity> = emptyList(),
+    val recentPRs: List<PRWithExerciseName> = emptyList(),
     val overloadSuggestions: List<OverloadSuggestion> = emptyList(),
     val measurements: List<BodyMeasurementEntity> = emptyList(),
     val calendarDays: Map<Int, Boolean> = emptyMap(), // dayOfMonth -> hasWorkout
     val selectedMonth: Int = Calendar.getInstance().get(Calendar.MONTH),
     val selectedYear: Int = Calendar.getInstance().get(Calendar.YEAR),
     val useMetric: Boolean = true,
-    val showMeasurementDialog: Boolean = false
+    val showMeasurementDialog: Boolean = false,
+    val dailyVolume: List<DailyVolumePoint> = emptyList()
 )
 
 class ProgressViewModel(private val app: GymTrackerApp) : ViewModel() {
@@ -83,7 +92,30 @@ class ProgressViewModel(private val app: GymTrackerApp) : ViewModel() {
             repo.getAvgDuration(monthStart, now).collect { _state.update { s -> s.copy(avgDuration = it) } }
         }
         viewModelScope.launch {
-            repo.getRecentPRs(10).collect { _state.update { s -> s.copy(recentPRs = it) } }
+            repo.getRecentPRsWithExercises(10).collect { _state.update { s -> s.copy(recentPRs = it) } }
+        }
+        viewModelScope.launch {
+            repo.getAllSessions().collect { sessions ->
+                val fmt = SimpleDateFormat("MMM d", Locale.getDefault())
+                val grouped = sessions
+                    .filter { it.endTime != null && it.totalVolumeKg > 0 }
+                    .groupBy { session ->
+                        val cal = Calendar.getInstance().apply { timeInMillis = session.startTime }
+                        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0)
+                        cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0)
+                        cal.timeInMillis
+                    }
+                    .entries
+                    .sortedBy { it.key }
+                    .takeLast(14)
+                    .map { (dayMs, daySessions) ->
+                        DailyVolumePoint(
+                            label = fmt.format(Date(dayMs)),
+                            volumeKg = daySessions.sumOf { it.totalVolumeKg }
+                        )
+                    }
+                _state.update { s -> s.copy(dailyVolume = grouped) }
+            }
         }
         viewModelScope.launch {
             repo.getAllMeasurements().collect { _state.update { s -> s.copy(measurements = it) } }
@@ -305,6 +337,26 @@ fun ProgressScreen(
             }
         }
 
+        // Volume over time chart
+        if (state.dailyVolume.size >= 2) {
+            item {
+                SectionHeader(title = "Volume Over Time")
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        VolumeBarChart(
+                            data = state.dailyVolume,
+                            useMetric = state.useMetric,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+            }
+        }
+
         // Recent PRs
         if (state.recentPRs.isNotEmpty()) {
             item { SectionHeader(title = "Recent Personal Records") }
@@ -322,8 +374,16 @@ fun ProgressScreen(
                         Icon(Icons.Filled.EmojiEvents, null, tint = NeonYellow, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(pr.recordType, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                            Text(FormatUtils.formatDate(pr.achievedAt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                pr.exerciseName,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                FormatUtils.formatDate(pr.achievedAt),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                         Text(
                             FormatUtils.formatWeight(pr.value, state.useMetric),
@@ -395,6 +455,78 @@ fun ProgressScreen(
             useMetric = state.useMetric,
             onSave = { bw, bf, c, w, la, ra -> viewModel.saveMeasurement(bw, bf, c, w, la, ra) },
             onDismiss = { viewModel.hideMeasurementDialog() }
+        )
+    }
+}
+
+@Composable
+fun VolumeBarChart(
+    data: List<DailyVolumePoint>,
+    useMetric: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val maxVal = data.maxOf { it.volumeKg }.coerceAtLeast(1.0)
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    Column(modifier = modifier) {
+        androidx.compose.foundation.Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+        ) {
+            val barCount = data.size
+            val slotWidth = size.width / barCount
+            val barWidth = slotWidth * 0.55f
+            val chartHeight = size.height
+
+            data.forEachIndexed { i, point ->
+                val barHeight = ((point.volumeKg / maxVal) * (chartHeight - 4.dp.toPx())).toFloat()
+                val x = i * slotWidth + (slotWidth - barWidth) / 2
+                val y = chartHeight - barHeight
+
+                drawRoundRect(
+                    color = primaryColor.copy(alpha = 0.75f),
+                    topLeft = Offset(x, y),
+                    size = Size(barWidth, barHeight),
+                    cornerRadius = CornerRadius(4.dp.toPx()),
+                    style = Fill
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        // X-axis labels: show first, middle and last
+        Row(modifier = Modifier.fillMaxWidth()) {
+            if (data.isNotEmpty()) {
+                Text(
+                    data.first().label,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = labelColor,
+                    modifier = Modifier.weight(1f)
+                )
+                if (data.size > 2) {
+                    Text(
+                        data[data.size / 2].label,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                        color = labelColor,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Text(
+                    data.last().label,
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = labelColor,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            "Max: ${FormatUtils.formatVolume(maxVal, useMetric)}",
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor
         )
     }
 }

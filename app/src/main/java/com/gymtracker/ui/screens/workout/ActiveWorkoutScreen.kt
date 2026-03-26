@@ -728,7 +728,7 @@ fun ExerciseSessionCard(
                     modifier = Modifier.width(36.dp),
                     textAlign = TextAlign.Center
                 )
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.width(4.dp))
                 Text(
                     "PREVIOUS",
                     style = MaterialTheme.typography.labelSmall,
@@ -736,7 +736,7 @@ fun ExerciseSessionCard(
                     modifier = Modifier.width(62.dp),
                     textAlign = TextAlign.Center
                 )
-                Spacer(Modifier.width(6.dp))
+                Spacer(Modifier.width(4.dp))
                 if (inputMode != ExerciseInputMode.REPS_ONLY) {
                     Text(
                         if (inputMode == ExerciseInputMode.TIME_ONLY) "TIME" else "KG",
@@ -1016,7 +1016,7 @@ fun SetRow(
                 .fillMaxWidth()
                 .padding(vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // ── SET badge (tap to cycle type) ─────────────────
             Box(
@@ -1077,7 +1077,10 @@ fun SetRow(
                     },
                     textStyle = fieldTextStyle,
                     colors = fieldColors,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = OutlinedTextFieldDefaults.contentPadding(
+                        start = 4.dp, top = 8.dp, end = 4.dp, bottom = 8.dp
+                    )
                 )
             }
 
@@ -1109,7 +1112,10 @@ fun SetRow(
                     },
                     textStyle = fieldTextStyle,
                     colors = fieldColors,
-                    shape = RoundedCornerShape(8.dp)
+                    shape = RoundedCornerShape(8.dp),
+                    contentPadding = OutlinedTextFieldDefaults.contentPadding(
+                        start = 4.dp, top = 8.dp, end = 4.dp, bottom = 8.dp
+                    )
                 )
             }
 

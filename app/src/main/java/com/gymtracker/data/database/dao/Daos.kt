@@ -227,6 +227,16 @@ interface WorkoutSetDao {
 // ═══════════════════════════════════════════════════════════════
 // PERSONAL RECORD DAO
 // ═══════════════════════════════════════════════════════════════
+data class PRWithExerciseName(
+    val id: Long,
+    val exerciseId: Long,
+    val recordType: String,
+    val value: Double,
+    val achievedAt: Long,
+    val sessionId: Long?,
+    val exerciseName: String
+)
+
 @Dao
 interface PersonalRecordDao {
     @Query("SELECT * FROM personal_records WHERE exerciseId = :exerciseId ORDER BY achievedAt DESC")
@@ -234,6 +244,16 @@ interface PersonalRecordDao {
 
     @Query("SELECT * FROM personal_records ORDER BY achievedAt DESC LIMIT :limit")
     fun getRecentRecords(limit: Int = 20): Flow<List<PersonalRecordEntity>>
+
+    @Query("""
+        SELECT pr.id, pr.exerciseId, pr.recordType, pr.value, pr.achievedAt, pr.sessionId,
+               e.name as exerciseName
+        FROM personal_records pr
+        INNER JOIN exercises e ON pr.exerciseId = e.id
+        ORDER BY pr.achievedAt DESC
+        LIMIT :limit
+    """)
+    fun getRecentRecordsWithExercises(limit: Int = 20): Flow<List<PRWithExerciseName>>
 
     @Query("""
         SELECT * FROM personal_records 

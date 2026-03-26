@@ -171,6 +171,7 @@ class GymRepository(private val db: AppDatabase) {
 
     // ═══════════════════ PERSONAL RECORDS ═══════════════════
     fun getRecentPRs(limit: Int = 20): Flow<List<PersonalRecordEntity>> = db.personalRecordDao().getRecentRecords(limit)
+    fun getRecentPRsWithExercises(limit: Int = 20) = db.personalRecordDao().getRecentRecordsWithExercises(limit)
     fun getPRsForExercise(exerciseId: Long): Flow<List<PersonalRecordEntity>> = db.personalRecordDao().getRecordsForExercise(exerciseId)
 
     // ═══════════════════ BODY MEASUREMENTS ═══════════════════
