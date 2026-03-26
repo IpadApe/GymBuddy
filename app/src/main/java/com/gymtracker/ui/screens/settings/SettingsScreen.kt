@@ -82,6 +82,18 @@ fun SettingsScreen(
             )
         }
 
+        // Profile
+        item { SectionHeader(title = "Profile") }
+        item {
+            SettingsToggle(
+                icon = Icons.Filled.Person,
+                title = "Female Body",
+                subtitle = if (p.isFemale) "Showing female body map" else "Showing male body map",
+                checked = p.isFemale,
+                onCheckedChange = { viewModel.updatePrefs { it.copy(isFemale = !it.isFemale) } }
+            )
+        }
+
         // Units
         item { SectionHeader(title = "Units") }
         item {

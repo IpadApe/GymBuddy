@@ -247,7 +247,8 @@ data class UserPreferencesEntity(
     val availableEquipment: String = "All", // Comma-separated
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
-    val bodyWeightKg: Double? = null
+    val bodyWeightKg: Double? = null,
+    val isFemale: Boolean = false
 )
 
 // ═══════════════════════════════════════════════════════════════
