@@ -234,7 +234,7 @@ fun BodyMapDiagram(
         androidx.compose.foundation.Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(1.32f)   // matches the uploaded body_map image proportions
+                .aspectRatio(601f / 525f)  // exact body_map.png dimensions (601×525)
         ) {
             val W = size.width; val H = size.height
 
@@ -262,8 +262,9 @@ fun BodyMapDiagram(
 
 // ─────────────────────────────────────────────────────────────
 // FRONT overlays
-// Reference image: front figure x=4%–46%, y=2%–96%, centre x≈25%
-// All coordinates measured from the uploaded line-art PNG.
+// Measured from body_map.png (601×525):
+//   Front figure: x=0.030–0.474, centre x=0.252
+//   Content y:    0.048–0.950
 // ─────────────────────────────────────────────────────────────
 private fun DrawScope.drawFrontOverlays(
     W: Float, H: Float,
@@ -276,47 +277,48 @@ private fun DrawScope.drawFrontOverlays(
             size    = Size(2 * rx * W, 2 * ry * H))
     }
 
-    // Deltoids — round shoulder cap, sits at outer shoulder
-    o(0.092f, 0.205f, 0.028f, 0.045f, MuscleGroup.SHOULDERS)   // left
-    o(0.408f, 0.205f, 0.028f, 0.045f, MuscleGroup.SHOULDERS)   // right
+    // Deltoids — shoulder caps appear at y≈0.21 (left=0.163, right=0.343)
+    o(0.173f, 0.215f, 0.024f, 0.036f, MuscleGroup.SHOULDERS)   // left
+    o(0.331f, 0.215f, 0.024f, 0.036f, MuscleGroup.SHOULDERS)   // right
 
-    // Pectorals — D-shaped, sternum at ~x=0.25
-    o(0.172f, 0.245f, 0.050f, 0.060f, MuscleGroup.CHEST)       // left pec
-    o(0.328f, 0.245f, 0.050f, 0.060f, MuscleGroup.CHEST)       // right pec
+    // Pectorals — torso centre x=0.252, pecs sit left/right of sternum
+    o(0.210f, 0.265f, 0.038f, 0.050f, MuscleGroup.CHEST)       // left pec
+    o(0.294f, 0.265f, 0.038f, 0.050f, MuscleGroup.CHEST)       // right pec
 
-    // Biceps — narrow oval on front of upper arm
-    o(0.068f, 0.355f, 0.024f, 0.068f, MuscleGroup.BICEPS)      // left
-    o(0.432f, 0.355f, 0.024f, 0.068f, MuscleGroup.BICEPS)      // right
+    // Biceps — front of upper arm, arm outer edge at y=0.25–0.35 is x=0.120/0.388
+    o(0.136f, 0.310f, 0.020f, 0.056f, MuscleGroup.BICEPS)      // left
+    o(0.368f, 0.310f, 0.020f, 0.056f, MuscleGroup.BICEPS)      // right
 
-    // Forearms
-    o(0.058f, 0.495f, 0.020f, 0.055f, MuscleGroup.FOREARMS)    // left
-    o(0.442f, 0.495f, 0.020f, 0.055f, MuscleGroup.FOREARMS)    // right
+    // Forearms — arm extends to x=0.078/0.428 at y=0.35–0.45
+    o(0.096f, 0.455f, 0.018f, 0.050f, MuscleGroup.FOREARMS)    // left
+    o(0.406f, 0.455f, 0.018f, 0.050f, MuscleGroup.FOREARMS)    // right
 
-    // Abs — 2 columns × 3 rows (6-pack grid)
+    // Abs — 2 columns × 3 rows (6-pack grid), centred on x=0.252
     val ac = color(MuscleGroup.ABS); val aa = alpha(MuscleGroup.ABS)
-    for (cx in listOf(0.217f, 0.283f)) {
-        for (cy in listOf(0.338f, 0.396f, 0.452f)) {
+    for (cx in listOf(0.228f, 0.276f)) {
+        for (cy in listOf(0.325f, 0.375f, 0.425f)) {
             drawOval(ac.copy(aa),
-                Offset((cx - 0.020f) * W, (cy - 0.024f) * H),
-                Size(0.040f * W, 0.048f * H))
+                Offset((cx - 0.022f) * W, (cy - 0.030f) * H),
+                Size(0.044f * W, 0.060f * H))
         }
     }
-    // Obliques — on sides of rectus abdominis
-    o(0.155f, 0.415f, 0.018f, 0.055f, MuscleGroup.ABS)         // left
-    o(0.345f, 0.415f, 0.018f, 0.055f, MuscleGroup.ABS)         // right
+    // Obliques
+    o(0.183f, 0.390f, 0.017f, 0.048f, MuscleGroup.ABS)         // left
+    o(0.321f, 0.390f, 0.017f, 0.048f, MuscleGroup.ABS)         // right
 
-    // Quads — upper thigh only (crotch→knee = y≈0.53–0.72, centre≈0.62)
-    o(0.166f, 0.625f, 0.038f, 0.072f, MuscleGroup.QUADS)       // left
-    o(0.334f, 0.625f, 0.038f, 0.072f, MuscleGroup.QUADS)       // right
+    // Quads — thighs at y=0.65–0.75: left=0.160, right=0.346, gap≈0.240–0.265
+    o(0.200f, 0.678f, 0.035f, 0.062f, MuscleGroup.QUADS)       // left thigh
+    o(0.305f, 0.678f, 0.035f, 0.062f, MuscleGroup.QUADS)       // right thigh
 
-    // Tibialis anterior — narrow strip on front of shin (knee→ankle = y≈0.73–0.90)
-    o(0.163f, 0.820f, 0.015f, 0.042f, MuscleGroup.CALVES)      // left
-    o(0.337f, 0.820f, 0.015f, 0.042f, MuscleGroup.CALVES)      // right
+    // Tibialis anterior — front of shin
+    o(0.192f, 0.815f, 0.014f, 0.038f, MuscleGroup.CALVES)      // left
+    o(0.313f, 0.815f, 0.014f, 0.038f, MuscleGroup.CALVES)      // right
 }
 
 // ─────────────────────────────────────────────────────────────
 // BACK overlays
-// Back figure x=54%–96%, y=2%–96%, centre x≈75%
+// Measured from body_map.png (601×525):
+//   Back figure: x=0.532–0.980, centre x=0.756
 // ─────────────────────────────────────────────────────────────
 private fun DrawScope.drawBackOverlays(
     W: Float, H: Float,
@@ -329,36 +331,36 @@ private fun DrawScope.drawBackOverlays(
             size    = Size(2 * rx * W, 2 * ry * H))
     }
 
-    // Rear deltoids
-    o(0.592f, 0.205f, 0.028f, 0.045f, MuscleGroup.SHOULDERS)   // left
-    o(0.908f, 0.205f, 0.028f, 0.045f, MuscleGroup.SHOULDERS)   // right
+    // Rear deltoids — shoulder span at y=0.15–0.25: left=0.637, right=0.875
+    o(0.648f, 0.215f, 0.024f, 0.036f, MuscleGroup.SHOULDERS)   // left
+    o(0.862f, 0.215f, 0.024f, 0.036f, MuscleGroup.SHOULDERS)   // right
 
-    // Trapezius — wide diamond from neck to mid-back
-    o(0.750f, 0.240f, 0.096f, 0.075f, MuscleGroup.BACK)
+    // Trapezius — upper back, centred on spine x=0.756
+    o(0.756f, 0.235f, 0.088f, 0.060f, MuscleGroup.BACK)
 
-    // Lats — sweep from armpit down to lower back
-    o(0.618f, 0.375f, 0.044f, 0.088f, MuscleGroup.BACK)        // left
-    o(0.882f, 0.375f, 0.044f, 0.088f, MuscleGroup.BACK)        // right
+    // Lats — sweep down from armpit
+    o(0.672f, 0.360f, 0.040f, 0.075f, MuscleGroup.BACK)        // left
+    o(0.840f, 0.360f, 0.040f, 0.075f, MuscleGroup.BACK)        // right
 
-    // Triceps — back of upper arm
-    o(0.572f, 0.355f, 0.024f, 0.068f, MuscleGroup.TRICEPS)     // left
-    o(0.928f, 0.355f, 0.024f, 0.068f, MuscleGroup.TRICEPS)     // right
+    // Triceps — back of upper arm, arm outer edge at y=0.25–0.35: x=0.616/0.897
+    o(0.628f, 0.320f, 0.022f, 0.058f, MuscleGroup.TRICEPS)     // left
+    o(0.882f, 0.320f, 0.022f, 0.058f, MuscleGroup.TRICEPS)     // right
 
-    // Forearms (back)
-    o(0.558f, 0.495f, 0.020f, 0.055f, MuscleGroup.FOREARMS)    // left
-    o(0.942f, 0.495f, 0.020f, 0.055f, MuscleGroup.FOREARMS)    // right
+    // Forearms (back) — arm extends to x=0.579/0.933 at y=0.35–0.45
+    o(0.596f, 0.450f, 0.018f, 0.048f, MuscleGroup.FOREARMS)    // left
+    o(0.916f, 0.450f, 0.018f, 0.048f, MuscleGroup.FOREARMS)    // right
 
-    // Glutes — large rounded, y≈0.55–0.68
-    o(0.683f, 0.615f, 0.052f, 0.062f, MuscleGroup.GLUTES)      // left
-    o(0.817f, 0.615f, 0.052f, 0.062f, MuscleGroup.GLUTES)      // right
+    // Glutes — large rounded muscles at y≈0.56–0.67
+    o(0.697f, 0.600f, 0.047f, 0.057f, MuscleGroup.GLUTES)      // left
+    o(0.815f, 0.600f, 0.047f, 0.057f, MuscleGroup.GLUTES)      // right
 
-    // Hamstrings — back of upper thigh, y≈0.55–0.72
-    o(0.665f, 0.635f, 0.042f, 0.078f, MuscleGroup.HAMSTRINGS)  // left
-    o(0.835f, 0.635f, 0.042f, 0.078f, MuscleGroup.HAMSTRINGS)  // right
+    // Hamstrings — back of thigh, y=0.65–0.75: left=0.651, right=0.864
+    o(0.697f, 0.678f, 0.040f, 0.062f, MuscleGroup.HAMSTRINGS)  // left
+    o(0.815f, 0.678f, 0.040f, 0.062f, MuscleGroup.HAMSTRINGS)  // right
 
-    // Calves — gastrocnemius, y≈0.74–0.89
-    o(0.655f, 0.825f, 0.032f, 0.055f, MuscleGroup.CALVES)      // left
-    o(0.845f, 0.825f, 0.032f, 0.055f, MuscleGroup.CALVES)      // right
+    // Calves — gastrocnemius
+    o(0.690f, 0.815f, 0.028f, 0.050f, MuscleGroup.CALVES)      // left
+    o(0.820f, 0.815f, 0.028f, 0.050f, MuscleGroup.CALVES)      // right
 }
 
 // ─────────────────────────────────────────────────────────────

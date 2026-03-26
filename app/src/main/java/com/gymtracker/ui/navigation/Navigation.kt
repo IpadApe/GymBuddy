@@ -139,7 +139,13 @@ fun MainNavigation(startOnboarding: Boolean = false) {
             composable(Screen.Home.route) {
                 HomeScreen(
                     onStartWorkout = { navController.navigate(Screen.WorkoutSetup.route) },
-                    onViewProgress = { navController.navigate(Screen.Progress.route) },
+                    onViewProgress = {
+                        navController.navigate(Screen.Progress.route) {
+                            popUpTo(Screen.Home.route) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
                     onViewBodyMap = { navController.navigate(Screen.BodyMap.route) },
                     onNavigateToExercises = { navController.navigate(Screen.Exercises.route) },
                     onResumeWorkout = { sessionId ->
