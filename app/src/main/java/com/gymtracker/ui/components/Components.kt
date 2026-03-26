@@ -25,10 +25,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalContext
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
 import com.gymtracker.ui.theme.*
 
 // ═══════════════════════════════════════════════════════════════
@@ -86,7 +82,7 @@ fun GradientButton(
     icon: ImageVector? = null,
     enabled: Boolean = true
 ) {
-    val colors = listOf(Crimson, CrimsonDark)
+    val colors = listOf(OrangePrimary, OrangeDark)
     Button(
         onClick = onClick,
         modifier = modifier.height(52.dp),
@@ -308,19 +304,6 @@ fun RestTimerDisplay(
     val isLastFive = secondsRemaining in 1..5
     val timerColor = if (isLastFive) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
 
-    val context = LocalContext.current
-    val vibrator = remember { context.getSystemService(Vibrator::class.java) }
-    LaunchedEffect(secondsRemaining) {
-        if (secondsRemaining in 1..5) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator?.vibrate(VibrationEffect.createOneShot(180, VibrationEffect.DEFAULT_AMPLITUDE))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator?.vibrate(180)
-            }
-        }
-    }
-
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
@@ -397,10 +380,10 @@ fun PRCelebration(
                 .fillMaxWidth()
                 .padding(16.dp)
                 .clickable(onClick = onDismiss),
-            colors = CardDefaults.cardColors(containerColor = NeonGreen.copy(alpha = 0.15f)),
+            colors = CardDefaults.cardColors(containerColor = TealSuccess.copy(alpha = 0.15f)),
             shape = RoundedCornerShape(20.dp),
             border = CardDefaults.outlinedCardBorder().copy(
-                brush = Brush.horizontalGradient(listOf(NeonGreen, NeonYellow))
+                brush = Brush.horizontalGradient(listOf(TealSuccess, WarningOrange))
             )
         ) {
             Column(
@@ -413,7 +396,7 @@ fun PRCelebration(
                     "NEW PERSONAL RECORD!",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Black,
-                    color = NeonGreen
+                    color = TealSuccess
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
@@ -425,7 +408,7 @@ fun PRCelebration(
                     weight,
                     style = MaterialTheme.typography.displaySmall,
                     fontWeight = FontWeight.Bold,
-                    color = NeonYellow
+                    color = WarningOrange
                 )
             }
         }
@@ -507,18 +490,18 @@ fun EmptyState(
 // ═══════════════════════════════════════════════════════════════
 fun getMuscleColor(muscle: String): Color {
     return when (muscle.lowercase()) {
-        "chest" -> Color(0xFFE94560)
-        "back" -> Color(0xFF448AFF)
-        "shoulders" -> Color(0xFFFF9100)
-        "biceps" -> Color(0xFF9C27B0)
-        "triceps" -> Color(0xFFE040FB)
-        "forearms" -> Color(0xFF795548)
-        "abs/core" -> Color(0xFFFFEB3B)
-        "quads" -> Color(0xFF4CAF50)
-        "hamstrings" -> Color(0xFF00BCD4)
-        "glutes" -> Color(0xFFFF5722)
-        "calves" -> Color(0xFF8BC34A)
-        else -> Color(0xFF9E9E9E)
+        "chest"      -> Color(0xFFFF6B35)  // orange
+        "back"       -> Color(0xFF4FC3F7)  // sky blue
+        "shoulders"  -> Color(0xFFFFB300)  // amber
+        "biceps"     -> Color(0xFF26C6A6)  // teal
+        "triceps"    -> Color(0xFF7C83FD)  // periwinkle
+        "forearms"   -> Color(0xFF80CBC4)  // light teal
+        "abs/core"   -> Color(0xFFFF8E5E)  // light orange
+        "quads"      -> Color(0xFF81D4FA)  // light blue
+        "hamstrings" -> Color(0xFF4DB6AC)  // teal-green
+        "glutes"     -> Color(0xFFFFCC02)  // gold
+        "calves"     -> Color(0xFF80DEEA)  // cyan
+        else         -> Color(0xFF888899)
     }
 }
 

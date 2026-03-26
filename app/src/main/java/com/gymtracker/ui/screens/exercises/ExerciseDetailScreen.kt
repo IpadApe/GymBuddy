@@ -126,7 +126,7 @@ fun ExerciseDetailScreen(
                                 "Intermediate" -> WarningOrange
                                 else -> ErrorRed
                             })
-                            ChipLabel(exercise.movementType, NeonPurple)
+                            ChipLabel(exercise.movementType, Color(0xFF7C83FD))
                         }
                         if (exercise.secondaryMuscleGroups.isNotBlank()) {
                             Spacer(modifier = Modifier.height(8.dp))
@@ -152,14 +152,14 @@ fun ExerciseDetailScreen(
                         title = "Est. 1RM",
                         value = if (state.estimated1RM > 0) FormatUtils.formatWeight(state.estimated1RM, state.useMetric) else "--",
                         icon = Icons.Filled.EmojiEvents,
-                        color = NeonYellow,
+                        color = WarningOrange,
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "PRs",
                         value = "${state.personalRecords.size}",
                         icon = Icons.Filled.Star,
-                        color = NeonGreen,
+                        color = TealSuccess,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -204,7 +204,7 @@ fun ExerciseDetailScreen(
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 if (set.isPersonalRecord) {
-                                    Icon(Icons.Filled.Star, null, tint = NeonYellow, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Filled.Star, null, tint = WarningOrange, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                 }
                                 Text(
@@ -216,7 +216,7 @@ fun ExerciseDetailScreen(
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(set.setType, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 set.rpe?.let {
-                                    Text("RPE $it", style = MaterialTheme.typography.labelSmall, color = NeonOrange)
+                                    Text("RPE $it", style = MaterialTheme.typography.labelSmall, color = OrangePrimary)
                                 }
                             }
                         }
@@ -278,7 +278,7 @@ fun OneRepMaxCalculatorCard(useMetric: Boolean) {
                     "Estimated 1RM: ${String.format("%.1f", orm)} ${if (useMetric) "kg" else "lbs"}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = NeonGreen
+                    color = TealSuccess
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 // Percentage table

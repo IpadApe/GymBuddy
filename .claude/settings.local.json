@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir \"D:\\\\GymBuddy\\\\gym-tracker\" /b)"
+      "Bash(dir \"D:\\\\GymBuddy\\\\gym-tracker\" /b)",
+      "WebFetch(domain:www.designrush.com)",
+      "WebSearch",
+      "WebFetch(domain:octet.design)",
+      "WebFetch(domain:icolorpalette.com)",
+      "WebFetch(domain:mypersonaltrainerwebsite.com)",
+      "WebFetch(domain:colorswall.com)"
     ]
   }
 }

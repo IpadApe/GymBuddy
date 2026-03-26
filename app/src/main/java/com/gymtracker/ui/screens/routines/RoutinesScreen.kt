@@ -162,13 +162,13 @@ fun RoutineCard(
                     }
                 }
                 if (routine.isPrebuilt) {
-                    ChipLabel("Template", NeonBlue)
+                    ChipLabel("Template", BlueTrust)
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ChipLabel("${routine.daysPerWeek}x/week", MaterialTheme.colorScheme.primary)
-                ChipLabel(routine.goal, NeonGreen)
+                ChipLabel(routine.goal, TealSuccess)
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

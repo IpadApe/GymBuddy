@@ -219,7 +219,7 @@ fun GoalPage(selectedGoal: String, onGoalChange: (String) -> Unit) {
                 ),
                 shape = RoundedCornerShape(14.dp),
                 border = if (isSelected) CardDefaults.outlinedCardBorder().copy(
-                    brush = Brush.horizontalGradient(listOf(Crimson, CrimsonLight))
+                    brush = Brush.horizontalGradient(listOf(OrangePrimary, OrangeLight))
                 ) else null
             ) {
                 Row(
@@ -362,7 +362,7 @@ fun FeatureRow(text: String) {
         modifier = Modifier.padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(Icons.Filled.CheckCircle, null, tint = NeonGreen, modifier = Modifier.size(18.dp))
+        Icon(Icons.Filled.CheckCircle, null, tint = TealSuccess, modifier = Modifier.size(18.dp))
         Spacer(modifier = Modifier.width(10.dp))
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }

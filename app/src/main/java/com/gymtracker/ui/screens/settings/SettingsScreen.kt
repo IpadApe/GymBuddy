@@ -165,7 +165,7 @@ fun SettingsScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Upload, null, tint = NeonBlue)
+                    Icon(Icons.Filled.Upload, null, tint = BlueTrust)
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
                         Text("Export Data", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)

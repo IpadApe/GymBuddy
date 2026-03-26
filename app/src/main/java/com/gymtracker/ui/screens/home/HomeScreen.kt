@@ -140,21 +140,21 @@ fun HomeScreen(
                     title = "Workouts",
                     value = "${uiState.weeklySessionCount}",
                     icon = Icons.Filled.FitnessCenter,
-                    color = NeonBlue,
+                    color = BlueTrust,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
                     title = "Volume",
                     value = FormatUtils.formatVolume(uiState.weeklyVolume, uiState.useMetric),
                     icon = Icons.Filled.TrendingUp,
-                    color = NeonGreen,
+                    color = TealSuccess,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
                     title = "Avg Time",
                     value = if (uiState.avgDuration > 0) FormatUtils.formatDuration(uiState.avgDuration) else "--",
                     icon = Icons.Filled.Timer,
-                    color = NeonOrange,
+                    color = OrangePrimary,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -171,21 +171,21 @@ fun HomeScreen(
                     icon = Icons.Filled.Accessibility,
                     label = "Body Map",
                     onClick = onViewBodyMap,
-                    color = NeonPurple,
+                    color = Color(0xFF7C83FD),
                     modifier = Modifier.weight(1f)
                 )
                 QuickActionCard(
                     icon = Icons.Filled.BarChart,
                     label = "Progress",
                     onClick = onViewProgress,
-                    color = NeonGreen,
+                    color = TealSuccess,
                     modifier = Modifier.weight(1f)
                 )
                 QuickActionCard(
                     icon = Icons.Filled.Search,
                     label = "Exercises",
                     onClick = onNavigateToExercises,
-                    color = NeonBlue,
+                    color = BlueTrust,
                     modifier = Modifier.weight(1f)
                 )
             }

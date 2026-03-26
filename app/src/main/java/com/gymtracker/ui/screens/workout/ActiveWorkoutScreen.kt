@@ -124,6 +124,10 @@ class ActiveWorkoutViewModel(
     private val _setEditStates = MutableStateFlow<Map<Long, SetEditState>>(emptyMap())
     val setEditStates = _setEditStates.asStateFlow()
 
+    // Set IDs that failed validation (reps empty) — shown as error border in UI
+    private val _invalidSetIds = MutableStateFlow<Set<Long>>(emptySet())
+    val invalidSetIds = _invalidSetIds.asStateFlow()
+
     // Map<exerciseId, previous session's sets> for PREVIOUS column
     private val _previousSetsMap = MutableStateFlow<Map<Long, List<WorkoutSetEntity>>>(emptyMap())
     val previousSetsMap = _previousSetsMap.asStateFlow()
@@ -188,6 +192,7 @@ class ActiveWorkoutViewModel(
     fun updateSetReps(setId: Long, reps: String) {
         _setEditStates.value = _setEditStates.value +
                 (setId to (_setEditStates.value[setId] ?: SetEditState()).copy(repsText = reps, isPrefilled = false))
+        if (reps.isNotEmpty()) _invalidSetIds.value = _invalidSetIds.value - setId
     }
 
     fun updateSetRpe(setId: Long, rpe: Float?) {
@@ -205,10 +210,15 @@ class ActiveWorkoutViewModel(
     }
 
     fun completeSet(set: WorkoutSetEntity, restSeconds: Int) {
+        val editState = _setEditStates.value[set.id] ?: SetEditState()
+        val reps = editState.repsText.toIntOrNull() ?: 0
+        if (reps < 1) {
+            // Mark as invalid so the UI shows an error on the reps field
+            _invalidSetIds.value = _invalidSetIds.value + set.id
+            return
+        }
         viewModelScope.launch {
-            val editState = _setEditStates.value[set.id] ?: SetEditState()
             val weight = editState.weightText.toDoubleOrNull() ?: 0.0
-            val reps = editState.repsText.toIntOrNull() ?: 0
             val updated = set.copy(weight = weight, reps = reps, rpe = editState.rpe)
             repo.completeSet(updated)
             startRestTimer(restSeconds)
@@ -286,9 +296,21 @@ class ActiveWorkoutViewModel(
         _restSecondsRemaining.value = seconds
         _restTimerActive.value = true
         restTimerJob = viewModelScope.launch {
+            // Get vibrator from app context — works even when UI is in background
+            val vibrator = app.getSystemService(android.os.Vibrator::class.java)
             while (_restSecondsRemaining.value > 0) {
                 delay(1000)
                 _restSecondsRemaining.value--
+                val rem = _restSecondsRemaining.value
+                if (rem in 1..5) {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        vibrator?.vibrate(android.os.VibrationEffect.createOneShot(
+                            180, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                    } else {
+                        @Suppress("DEPRECATION")
+                        vibrator?.vibrate(180)
+                    }
+                }
             }
             _restTimerActive.value = false
         }
@@ -354,6 +376,7 @@ fun ActiveWorkoutScreen(
     val restRemaining by viewModel.restSecondsRemaining.collectAsState()
     val restTotal by viewModel.restTimerTotal.collectAsState()
     val setEditStates by viewModel.setEditStates.collectAsState()
+    val invalidSetIds by viewModel.invalidSetIds.collectAsState()
     val previousSetsMap by viewModel.previousSetsMap.collectAsState()
     val exerciseHistory by viewModel.exerciseHistory.collectAsState()
     val workoutCount by viewModel.workoutCount.collectAsState()
@@ -450,6 +473,7 @@ fun ActiveWorkoutScreen(
                     ExerciseSessionCard(
                         exerciseData = ex,
                         setEditStates = setEditStates,
+                        invalidSetIds = invalidSetIds,
                         previousSets = prevSets,
                         onUpdateWeight = { setId, w -> viewModel.updateSetWeight(setId, w) },
                         onUpdateReps = { setId, r -> viewModel.updateSetReps(setId, r) },
@@ -628,6 +652,7 @@ private fun formatWeightDisplay(weight: Double): String {
 fun ExerciseSessionCard(
     exerciseData: ExerciseWithSetsAndInfo,
     setEditStates: Map<Long, SetEditState>,
+    invalidSetIds: Set<Long> = emptySet(),
     previousSets: List<WorkoutSetEntity> = emptyList(),
     onUpdateWeight: (Long, String) -> Unit,
     onUpdateReps: (Long, String) -> Unit,
@@ -831,6 +856,7 @@ fun ExerciseSessionCard(
                     editState = editState,
                     inputMode = inputMode,
                     previousSet = prevSet,
+                    repsInvalid = set.id in invalidSetIds,
                     rpeExpanded = rpeExpandedForSetId == set.id,
                     onWeightChange = { onUpdateWeight(set.id, it) },
                     onRepsChange = { onUpdateReps(set.id, it) },
@@ -970,6 +996,7 @@ fun SetRow(
     editState: SetEditState,
     inputMode: ExerciseInputMode = ExerciseInputMode.WEIGHT_AND_REPS,
     previousSet: WorkoutSetEntity? = null,
+    repsInvalid: Boolean = false,
     rpeExpanded: Boolean,
     onWeightChange: (String) -> Unit,
     onRepsChange: (String) -> Unit,
@@ -1167,6 +1194,7 @@ fun SetRow(
             // ── REPS field ────────────────────────────────────
             if (inputMode != ExerciseInputMode.TIME_ONLY) {
                 val repsBorderColor = when {
+                    repsInvalid && !repsFocused -> MaterialTheme.colorScheme.error
                     repsFocused -> MaterialTheme.colorScheme.primary
                     set.isCompleted -> MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
                     else -> MaterialTheme.colorScheme.outline

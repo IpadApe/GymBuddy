@@ -211,16 +211,16 @@ fun ProgressScreen(
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatCard("Week Volume", FormatUtils.formatVolume(state.weeklyVolume, state.useMetric),
-                    Icons.Filled.FitnessCenter, NeonBlue, Modifier.weight(1f))
+                    Icons.Filled.FitnessCenter, BlueTrust, Modifier.weight(1f))
                 StatCard("Month Volume", FormatUtils.formatVolume(state.monthlyVolume, state.useMetric),
-                    Icons.Filled.TrendingUp, NeonGreen, Modifier.weight(1f))
+                    Icons.Filled.TrendingUp, TealSuccess, Modifier.weight(1f))
             }
         }
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Sessions/Week", "${state.weeklyCount}", Icons.Filled.CalendarMonth, NeonOrange, Modifier.weight(1f))
+                StatCard("Sessions/Week", "${state.weeklyCount}", Icons.Filled.CalendarMonth, OrangePrimary, Modifier.weight(1f))
                 StatCard("Avg Duration", if(state.avgDuration>0) FormatUtils.formatDuration(state.avgDuration) else "--",
-                    Icons.Filled.Timer, NeonPurple, Modifier.weight(1f))
+                    Icons.Filled.Timer, Color(0xFF7C83FD), Modifier.weight(1f))
             }
         }
 
@@ -320,14 +320,14 @@ fun ProgressScreen(
             item { SectionHeader(title = "Progressive Overload") }
             items(state.overloadSuggestions.take(5)) { suggestion ->
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = NeonGreen.copy(alpha = 0.08f)),
+                    colors = CardDefaults.cardColors(containerColor = TealSuccess.copy(alpha = 0.08f)),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Filled.TrendingUp, null, tint = NeonGreen, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Filled.TrendingUp, null, tint = TealSuccess, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(suggestion.exerciseName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
@@ -363,7 +363,7 @@ fun ProgressScreen(
             item { SectionHeader(title = "Recent Personal Records") }
             items(state.recentPRs.take(5)) { pr ->
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = NeonYellow.copy(alpha = 0.08f)),
+                    colors = CardDefaults.cardColors(containerColor = WarningOrange.copy(alpha = 0.08f)),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
@@ -372,7 +372,7 @@ fun ProgressScreen(
                             .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Filled.EmojiEvents, null, tint = NeonYellow, modifier = Modifier.size(24.dp))
+                        Icon(Icons.Filled.EmojiEvents, null, tint = WarningOrange, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -390,7 +390,7 @@ fun ProgressScreen(
                             FormatUtils.formatWeight(pr.value, state.useMetric),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = NeonYellow
+                            color = WarningOrange
                         )
                     }
                 }

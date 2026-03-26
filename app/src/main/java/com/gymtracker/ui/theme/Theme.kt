@@ -17,88 +17,125 @@ import androidx.core.view.WindowCompat
 
 // ═══════════════════════════════════════════════════════════════
 // COLOR PALETTE
+// Psychology: Deep dark = authority/focus  |  Orange = energy/motivation
+// Blue-teal  = trust/performance  |  Green = achievement/progress
 // ═══════════════════════════════════════════════════════════════
-val Crimson = Color(0xFFE94560)
-val CrimsonDark = Color(0xFFC73650)
-val CrimsonLight = Color(0xFFFF6B81)
 
-val DeepNavy = Color(0xFF0F0F23)
-val DarkSurface = Color(0xFF1A1A2E)
-val DarkSurfaceVariant = Color(0xFF16213E)
-val DarkCard = Color(0xFF1F2544)
+// Primary — Electric Orange (energy, motivation, action — #1 choice for fitness)
+val OrangePrimary    = Color(0xFFFF6B35)
+val OrangeDark       = Color(0xFFD95A28)
+val OrangeLight      = Color(0xFFFF8E5E)
+val OrangeContainer  = Color(0xFF3D1A0A)
 
-val NeonGreen = Color(0xFF00E676)
-val NeonBlue = Color(0xFF448AFF)
-val NeonOrange = Color(0xFFFF9100)
-val NeonPurple = Color(0xFFBB86FC)
-val NeonYellow = Color(0xFFFFEB3B)
+// Dark backgrounds — deep navy-black (authority, focus, high-performance feel)
+val BgDeep           = Color(0xFF0C0C16)   // main background
+val SurfaceDark      = Color(0xFF131320)   // cards/surfaces
+val SurfaceVariantDk = Color(0xFF1A1A2C)   // elevated surfaces
+val CardDark         = Color(0xFF1F1F32)   // cards
 
-val SuccessGreen = Color(0xFF4CAF50)
-val WarningOrange = Color(0xFFFF9800)
-val ErrorRed = Color(0xFFF44336)
+// Accent — cool sky-blue (trust, data, stability)
+val BlueTrust        = Color(0xFF4FC3F7)
+val BlueTrustDark    = Color(0xFF0288D1)
 
-val TextPrimary = Color(0xFFF5F5F5)
-val TextSecondary = Color(0xFFB0B0B0)
-val TextTertiary = Color(0xFF707070)
+// Tertiary — teal-green (achievement, success, wellness)
+val TealSuccess      = Color(0xFF26C6A6)
+val TealSuccessDark  = Color(0xFF00897B)
 
-val LightBackground = Color(0xFFF8F9FA)
-val LightSurface = Color(0xFFFFFFFF)
-val LightCard = Color(0xFFF0F2F5)
+// Semantic
+val SuccessGreen     = Color(0xFF26C6A6)
+val WarningOrange    = Color(0xFFFFB300)
+val ErrorRed         = Color(0xFFFF4757)
 
-// Muscle map colors
-val MuscleUndertrained = Color(0xFF4A4A5A)
-val MuscleAdequate = Color(0xFF4CAF50)
-val MuscleOvertrained = Color(0xFFF44336)
-val MuscleRecovering = Color(0xFFFF9800)
+// Text
+val TextPrimary      = Color(0xFFF0F0F8)
+val TextSecondary    = Color(0xFFAAABC0)
+val TextTertiary     = Color(0xFF666680)
+
+// Light theme
+val LightBackground  = Color(0xFFF5F5FA)
+val LightSurface     = Color(0xFFFFFFFF)
+val LightCard        = Color(0xFFEEEEF5)
+
+// Muscle map — orange accent palette for dark theme
+val MuscleUndertrained  = Color(0xFF3A3A50)
+val MuscleAdequate      = Color(0xFF26C6A6)   // teal-green — on track
+val MuscleOvertrained   = Color(0xFFFF4757)   // red — too much
+val MuscleRecovering    = Color(0xFFFFB300)   // amber — in recovery
+
+// Outline
+val OutlineDark      = Color(0xFF2A2A40)
+val OutlineLight     = Color(0xFFDDDDE8)
 
 // ═══════════════════════════════════════════════════════════════
 // DARK COLOR SCHEME
 // ═══════════════════════════════════════════════════════════════
 private val DarkColorScheme = darkColorScheme(
-    primary = Crimson,
-    onPrimary = Color.White,
-    primaryContainer = CrimsonDark,
-    onPrimaryContainer = Color.White,
-    secondary = NeonBlue,
-    onSecondary = Color.White,
-    secondaryContainer = DarkSurfaceVariant,
-    onSecondaryContainer = TextPrimary,
-    tertiary = NeonGreen,
-    onTertiary = Color.Black,
-    background = DeepNavy,
-    onBackground = TextPrimary,
-    surface = DarkSurface,
-    onSurface = TextPrimary,
-    surfaceVariant = DarkCard,
-    onSurfaceVariant = TextSecondary,
-    outline = Color(0xFF3A3A5C),
-    error = ErrorRed,
-    onError = Color.White
+    primary              = OrangePrimary,
+    onPrimary            = Color.White,
+    primaryContainer     = OrangeContainer,
+    onPrimaryContainer   = OrangeLight,
+
+    secondary            = BlueTrust,
+    onSecondary          = Color(0xFF002A3F),
+    secondaryContainer   = Color(0xFF00334D),
+    onSecondaryContainer = BlueTrust,
+
+    tertiary             = TealSuccess,
+    onTertiary           = Color(0xFF00201A),
+    tertiaryContainer    = Color(0xFF00352C),
+    onTertiaryContainer  = TealSuccess,
+
+    background           = BgDeep,
+    onBackground         = TextPrimary,
+
+    surface              = SurfaceDark,
+    onSurface            = TextPrimary,
+    surfaceVariant       = CardDark,
+    onSurfaceVariant     = TextSecondary,
+
+    outline              = OutlineDark,
+    outlineVariant       = Color(0xFF1E1E30),
+
+    error                = ErrorRed,
+    onError              = Color.White,
+    errorContainer       = Color(0xFF3D0A0A),
+    onErrorContainer     = ErrorRed
 )
 
 // ═══════════════════════════════════════════════════════════════
 // LIGHT COLOR SCHEME
 // ═══════════════════════════════════════════════════════════════
 private val LightColorScheme = lightColorScheme(
-    primary = Crimson,
-    onPrimary = Color.White,
-    primaryContainer = CrimsonLight,
-    onPrimaryContainer = Color.White,
-    secondary = Color(0xFF1565C0),
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE3F2FD),
-    onSecondaryContainer = Color(0xFF1565C0),
-    tertiary = Color(0xFF2E7D32),
-    onTertiary = Color.White,
-    background = LightBackground,
-    onBackground = Color(0xFF1A1A1A),
-    surface = LightSurface,
-    onSurface = Color(0xFF1A1A1A),
-    surfaceVariant = LightCard,
-    onSurfaceVariant = Color(0xFF555555),
-    outline = Color(0xFFDDDDDD),
-    error = ErrorRed,
-    onError = Color.White
+    primary              = OrangeDark,
+    onPrimary            = Color.White,
+    primaryContainer     = Color(0xFFFFDDD0),
+    onPrimaryContainer   = OrangeDark,
+
+    secondary            = BlueTrustDark,
+    onSecondary          = Color.White,
+    secondaryContainer   = Color(0xFFD0EEFF),
+    onSecondaryContainer = BlueTrustDark,
+
+    tertiary             = TealSuccessDark,
+    onTertiary           = Color.White,
+    tertiaryContainer    = Color(0xFFB2F0E8),
+    onTertiaryContainer  = TealSuccessDark,
+
+    background           = LightBackground,
+    onBackground         = Color(0xFF0E0E1A),
+
+    surface              = LightSurface,
+    onSurface            = Color(0xFF0E0E1A),
+    surfaceVariant       = LightCard,
+    onSurfaceVariant     = Color(0xFF50506A),
+
+    outline              = OutlineLight,
+    outlineVariant       = Color(0xFFCCCCDD),
+
+    error                = ErrorRed,
+    onError              = Color.White,
+    errorContainer       = Color(0xFFFFDDE0),
+    onErrorContainer     = Color(0xFF8B0000)
 )
 
 // ═══════════════════════════════════════════════════════════════
