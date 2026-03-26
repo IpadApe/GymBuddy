@@ -494,7 +494,7 @@ fun getMuscleColor(muscle: String): Color {
         "back"       -> Color(0xFF4FC3F7)  // sky blue
         "shoulders"  -> Color(0xFFFFB300)  // amber
         "biceps"     -> Color(0xFF26C6A6)  // teal
-        "triceps"    -> Color(0xFF7C83FD)  // periwinkle
+        "triceps"    -> Periwinkle  // periwinkle
         "forearms"   -> Color(0xFF80CBC4)  // light teal
         "abs/core"   -> Color(0xFFFF8E5E)  // light orange
         "quads"      -> Color(0xFF81D4FA)  // light blue

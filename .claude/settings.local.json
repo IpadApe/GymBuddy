@@ -7,7 +7,8 @@
       "WebFetch(domain:octet.design)",
       "WebFetch(domain:icolorpalette.com)",
       "WebFetch(domain:mypersonaltrainerwebsite.com)",
-      "WebFetch(domain:colorswall.com)"
+      "WebFetch(domain:colorswall.com)",
+      "Bash(xargs sed:*)"
     ]
   }
 }

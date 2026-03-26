@@ -220,7 +220,7 @@ fun ProgressScreen(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatCard("Sessions/Week", "${state.weeklyCount}", Icons.Filled.CalendarMonth, OrangePrimary, Modifier.weight(1f))
                 StatCard("Avg Duration", if(state.avgDuration>0) FormatUtils.formatDuration(state.avgDuration) else "--",
-                    Icons.Filled.Timer, Color(0xFF7C83FD), Modifier.weight(1f))
+                    Icons.Filled.Timer, Periwinkle, Modifier.weight(1f))
             }
         }
 

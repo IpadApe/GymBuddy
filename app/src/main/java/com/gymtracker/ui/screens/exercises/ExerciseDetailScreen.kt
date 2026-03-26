@@ -126,7 +126,7 @@ fun ExerciseDetailScreen(
                                 "Intermediate" -> WarningOrange
                                 else -> ErrorRed
                             })
-                            ChipLabel(exercise.movementType, Color(0xFF7C83FD))
+                            ChipLabel(exercise.movementType, Periwinkle)
                         }
                         if (exercise.secondaryMuscleGroups.isNotBlank()) {
                             Spacer(modifier = Modifier.height(8.dp))

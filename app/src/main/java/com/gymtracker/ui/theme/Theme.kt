@@ -62,6 +62,9 @@ val MuscleAdequate      = Color(0xFF26C6A6)   // teal-green — on track
 val MuscleOvertrained   = Color(0xFFFF4757)   // red — too much
 val MuscleRecovering    = Color(0xFFFFB300)   // amber — in recovery
 
+// Accent — periwinkle (replaces NeonPurple)
+val Periwinkle       = Color(0xFF7C83FD)
+
 // Outline
 val OutlineDark      = Color(0xFF2A2A40)
 val OutlineLight     = Color(0xFFDDDDE8)

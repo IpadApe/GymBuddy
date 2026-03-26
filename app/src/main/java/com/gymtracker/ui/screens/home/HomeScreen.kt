@@ -171,7 +171,7 @@ fun HomeScreen(
                     icon = Icons.Filled.Accessibility,
                     label = "Body Map",
                     onClick = onViewBodyMap,
-                    color = Color(0xFF7C83FD),
+                    color = Periwinkle,
                     modifier = Modifier.weight(1f)
                 )
                 QuickActionCard(
