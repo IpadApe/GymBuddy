@@ -16,6 +16,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.border
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -1052,70 +1054,106 @@ fun SetRow(
 
             // ── WEIGHT / TIME field ───────────────────────────
             if (inputMode != ExerciseInputMode.REPS_ONLY) {
-                OutlinedTextField(
+                val weightBorderColor = when {
+                    weightFocused -> MaterialTheme.colorScheme.primary
+                    set.isCompleted -> MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                    else -> MaterialTheme.colorScheme.outline
+                }
+                val weightTextColor = when {
+                    set.isCompleted -> normalColor.copy(alpha = 0.80f)
+                    editState.isPrefilled -> prefilledColor
+                    else -> normalColor
+                }
+                BasicTextField(
                     value = weightTFV,
-                    onValueChange = { nv ->
-                        // Allow digits and at most one decimal point
+                    onValueChange = { nv: TextFieldValue ->
                         if (nv.text.isEmpty() || nv.text.matches(Regex("^\\d*\\.?\\d*$"))) {
                             weightTFV = nv
                             onWeightChange(nv.text)
                         }
                     },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .border(
+                            width = if (weightFocused) 2.dp else 1.dp,
+                            color = weightBorderColor,
+                            shape = RoundedCornerShape(8.dp)
+                        ),
                     enabled = !set.isCompleted,
+                    textStyle = fieldTextStyle.copy(color = weightTextColor),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     interactionSource = weightSource,
-                    placeholder = {
-                        Text(
-                            if (inputMode == ExerciseInputMode.TIME_ONLY) "min" else "kg",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    },
-                    textStyle = fieldTextStyle,
-                    colors = fieldColors,
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = OutlinedTextFieldDefaults.contentPadding(
-                        start = 4.dp, top = 8.dp, end = 4.dp, bottom = 8.dp
-                    )
+                    singleLine = true,
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (weightTFV.text.isEmpty()) {
+                                Text(
+                                    if (inputMode == ExerciseInputMode.TIME_ONLY) "min" else "kg",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
                 )
             }
 
             // ── REPS field ────────────────────────────────────
             if (inputMode != ExerciseInputMode.TIME_ONLY) {
-                OutlinedTextField(
+                val repsBorderColor = when {
+                    repsFocused -> MaterialTheme.colorScheme.primary
+                    set.isCompleted -> MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                    else -> MaterialTheme.colorScheme.outline
+                }
+                val repsTextColor = when {
+                    set.isCompleted -> normalColor.copy(alpha = 0.80f)
+                    editState.isPrefilled -> prefilledColor
+                    else -> normalColor
+                }
+                BasicTextField(
                     value = repsTFV,
-                    onValueChange = { nv ->
-                        // Whole numbers only — no decimal point
+                    onValueChange = { nv: TextFieldValue ->
                         if (nv.text.isEmpty() || nv.text.matches(Regex("^\\d+$"))) {
                             repsTFV = nv
                             onRepsChange(nv.text)
                         }
                     },
-                    modifier = if (inputMode == ExerciseInputMode.REPS_ONLY)
-                        Modifier.weight(2f) else Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
+                    modifier = (if (inputMode == ExerciseInputMode.REPS_ONLY) Modifier.weight(2f) else Modifier.weight(1f))
+                        .height(44.dp)
+                        .border(
+                            width = if (repsFocused) 2.dp else 1.dp,
+                            color = repsBorderColor,
+                            shape = RoundedCornerShape(8.dp)
+                        ),
                     enabled = !set.isCompleted,
+                    textStyle = fieldTextStyle.copy(color = repsTextColor),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     interactionSource = repsSource,
-                    placeholder = {
-                        Text(
-                            "reps",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    },
-                    textStyle = fieldTextStyle,
-                    colors = fieldColors,
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = OutlinedTextFieldDefaults.contentPadding(
-                        start = 4.dp, top = 8.dp, end = 4.dp, bottom = 8.dp
-                    )
+                    singleLine = true,
+                    decorationBox = { innerTextField ->
+                        Box(
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (repsTFV.text.isEmpty()) {
+                                Text(
+                                    "reps",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                            innerTextField()
+                        }
+                    }
                 )
             }
 
