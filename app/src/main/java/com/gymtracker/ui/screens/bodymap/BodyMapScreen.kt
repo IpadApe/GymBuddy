@@ -1,5 +1,6 @@
 package com.gymtracker.ui.screens.bodymap
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,7 +50,7 @@ data class BodyMapState(
     val isFemale: Boolean = false
 )
 
-class BodyMapViewModel(private val app: GymTrackerApp) : ViewModel() {
+class BodyMapViewModel(app: GymTrackerApp) : ViewModel() {
     private val repo = app.repository
     private val _state = MutableStateFlow(BodyMapState())
     val state: StateFlow<BodyMapState> = _state.asStateFlow()
@@ -76,6 +77,7 @@ class BodyMapViewModelFactory : ViewModelProvider.Factory {
 // ─────────────────────────────────────────────────────────────
 // SCREEN
 // ─────────────────────────────────────────────────────────────
+@SuppressLint("DiscouragedApi")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BodyMapScreen(
@@ -229,30 +231,30 @@ fun BodyMapDiagram(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         // Single Canvas: overlays first, then image on top with Multiply blend
-        // Multiply: white image pixels × overlay colour = overlay colour (shows through)
-        //           black image lines  × overlay colour = black        (lines stay sharp)
+        // Multiply: white image pixels × overlay color = overlay color (shows through)
+        //           black image lines  × overlay color = black        (lines stay sharp)
         androidx.compose.foundation.Canvas(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(601f / 525f)  // exact body_map.png dimensions (601×525)
         ) {
-            val W = size.width; val H = size.height
+            val w = size.width; val h = size.height
 
             // 1 – white background so Multiply has a base to work against
             drawRect(Color.White)
 
-            // 2 – coloured muscle overlays
-            drawFrontOverlays(W, H, ::mColor, ::mAlpha)
-            drawBackOverlays(W, H, ::mColor, ::mAlpha)
+            // 2 – colored muscle overlays
+            drawFrontOverlays(w, h, ::mColor, ::mAlpha)
+            drawBackOverlays(w, h, ::mColor, ::mAlpha)
 
             // 3 – line-art image, Multiply blend:
-            //     white × colour = colour  →  overlays show in muscle areas
-            //     black × colour = black   →  anatomy lines stay crisp
+            //     white × color = color  →  overlays show in muscle areas
+            //     black × color = black  →  anatomy lines stay crisp
             imageBitmap?.let { bmp ->
                 drawImage(
                     image     = bmp,
                     dstOffset = IntOffset.Zero,
-                    dstSize   = IntSize(W.toInt(), H.toInt()),
+                    dstSize   = IntSize(w.toInt(), h.toInt()),
                     blendMode = BlendMode.Multiply
                 )
             }
@@ -263,18 +265,18 @@ fun BodyMapDiagram(
 // ─────────────────────────────────────────────────────────────
 // FRONT overlays
 // Measured from body_map.png (601×525):
-//   Front figure: x=0.030–0.474, centre x=0.252
+//   Front figure: x=0.030–0.474, center x=0.252
 //   Content y:    0.048–0.950
 // ─────────────────────────────────────────────────────────────
 private fun DrawScope.drawFrontOverlays(
-    W: Float, H: Float,
+    w: Float, h: Float,
     color: (MuscleGroup) -> Color,
     alpha: (MuscleGroup) -> Float
 ) {
     fun o(cx: Float, cy: Float, rx: Float, ry: Float, g: MuscleGroup) {
         drawOval(color(g).copy(alpha(g)),
-            topLeft = Offset((cx - rx) * W, (cy - ry) * H),
-            size    = Size(2 * rx * W, 2 * ry * H))
+            topLeft = Offset((cx - rx) * w, (cy - ry) * h),
+            size    = Size(2 * rx * w, 2 * ry * h))
     }
 
     // Deltoids — shoulder caps appear at y≈0.21 (left=0.163, right=0.343)
@@ -298,8 +300,8 @@ private fun DrawScope.drawFrontOverlays(
     for (cx in listOf(0.228f, 0.276f)) {
         for (cy in listOf(0.325f, 0.375f, 0.425f)) {
             drawOval(ac.copy(aa),
-                Offset((cx - 0.022f) * W, (cy - 0.030f) * H),
-                Size(0.044f * W, 0.060f * H))
+                Offset((cx - 0.022f) * w, (cy - 0.030f) * h),
+                Size(0.044f * w, 0.060f * h))
         }
     }
     // Obliques
@@ -318,17 +320,17 @@ private fun DrawScope.drawFrontOverlays(
 // ─────────────────────────────────────────────────────────────
 // BACK overlays
 // Measured from body_map.png (601×525):
-//   Back figure: x=0.532–0.980, centre x=0.756
+//   Back figure: x=0.532–0.980, center x=0.756
 // ─────────────────────────────────────────────────────────────
 private fun DrawScope.drawBackOverlays(
-    W: Float, H: Float,
+    w: Float, h: Float,
     color: (MuscleGroup) -> Color,
     alpha: (MuscleGroup) -> Float
 ) {
     fun o(cx: Float, cy: Float, rx: Float, ry: Float, g: MuscleGroup) {
         drawOval(color(g).copy(alpha(g)),
-            topLeft = Offset((cx - rx) * W, (cy - ry) * H),
-            size    = Size(2 * rx * W, 2 * ry * H))
+            topLeft = Offset((cx - rx) * w, (cy - ry) * h),
+            size    = Size(2 * rx * w, 2 * ry * h))
     }
 
     // Rear deltoids — shoulder span at y=0.15–0.25: left=0.637, right=0.875

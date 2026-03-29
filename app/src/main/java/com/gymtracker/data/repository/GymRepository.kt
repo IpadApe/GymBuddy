@@ -1,5 +1,8 @@
 package com.gymtracker.data.repository
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.annotations.SerializedName
 import com.gymtracker.data.database.AppDatabase
 import com.gymtracker.data.database.ExerciseSeedData
 import com.gymtracker.data.database.RoutineSeedData
@@ -9,6 +12,29 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.Calendar
+
+// ─── Template JSON format ────────────────────────────────────────────────────
+private data class TemplateJson(
+    @SerializedName("version") val version: Int = 1,
+    @SerializedName("name") val name: String,
+    @SerializedName("description") val description: String = "",
+    @SerializedName("goal") val goal: String = "Hypertrophy",
+    @SerializedName("daysPerWeek") val daysPerWeek: Int,
+    @SerializedName("days") val days: List<TemplateDayJson>
+)
+
+private data class TemplateDayJson(
+    @SerializedName("name") val name: String,
+    @SerializedName("splitType") val splitType: String = "CUSTOM",
+    @SerializedName("exercises") val exercises: List<TemplateExerciseJson>
+)
+
+private data class TemplateExerciseJson(
+    @SerializedName("exercise") val exercise: String,
+    @SerializedName("sets") val sets: Int = 3,
+    @SerializedName("reps") val reps: String = "8-12",
+    @SerializedName("restSeconds") val restSeconds: Int = 90
+)
 
 class GymRepository(private val db: AppDatabase) {
 
@@ -506,6 +532,79 @@ class GymRepository(private val db: AppDatabase) {
                 }
             }
         }
+    }
+
+    // ═══════════════════ TEMPLATE IMPORT/EXPORT ═══════════════════
+    private val gson: Gson = GsonBuilder().setPrettyPrinting().create()
+
+    suspend fun importRoutineFromJson(jsonString: String): Long {
+        val template = gson.fromJson(jsonString, TemplateJson::class.java)
+            ?: throw IllegalArgumentException("Invalid template JSON")
+        val exercises = db.exerciseDao().getAllExercises().first()
+        val exerciseMap = exercises.associateBy { it.name.lowercase() }
+
+        val routineId = db.routineDao().insertRoutine(
+            RoutineEntity(
+                name = template.name,
+                description = template.description,
+                goal = template.goal,
+                daysPerWeek = template.daysPerWeek,
+                isPrebuilt = false
+            )
+        )
+        template.days.forEachIndexed { index, day ->
+            val dayId = db.routineDayDao().insertDay(
+                RoutineDayEntity(
+                    routineId = routineId,
+                    dayName = day.name,
+                    dayOrder = index,
+                    splitType = day.splitType
+                )
+            )
+            day.exercises.forEachIndexed { exIndex, ex ->
+                val exerciseEntity = exerciseMap[ex.exercise.lowercase()]
+                if (exerciseEntity != null) {
+                    db.routineDayExerciseDao().insertExercise(
+                        RoutineDayExerciseEntity(
+                            routineDayId = dayId,
+                            exerciseId = exerciseEntity.id,
+                            orderIndex = exIndex,
+                            targetSets = ex.sets,
+                            targetReps = ex.reps,
+                            restTimeSeconds = ex.restSeconds
+                        )
+                    )
+                }
+            }
+        }
+        return routineId
+    }
+
+    suspend fun exportRoutineToJson(routineId: Long): String {
+        val routine = db.routineDao().getRoutineById(routineId) ?: return ""
+        val days = db.routineDayDao().getDaysForRoutine(routineId).first()
+        val dayJsonList = days.map { day ->
+            val dayExercises = db.routineDayExerciseDao().getExercisesForDay(day.id).first()
+            val exerciseJsonList = dayExercises.map { de ->
+                val exercise = db.exerciseDao().getExerciseById(de.exerciseId)
+                TemplateExerciseJson(
+                    exercise = exercise?.name ?: "Unknown",
+                    sets = de.targetSets,
+                    reps = de.targetReps,
+                    restSeconds = de.restTimeSeconds
+                )
+            }
+            TemplateDayJson(name = day.dayName, splitType = day.splitType, exercises = exerciseJsonList)
+        }
+        val template = TemplateJson(
+            version = 1,
+            name = routine.name,
+            description = routine.description,
+            goal = routine.goal,
+            daysPerWeek = routine.daysPerWeek,
+            days = dayJsonList
+        )
+        return gson.toJson(template)
     }
 
     // ═══════════════════ HELPERS ═══════════════════
