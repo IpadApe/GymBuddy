@@ -39,11 +39,16 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.app.PendingIntent
+import android.content.Intent
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.NotificationCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gymtracker.GymTrackerApp
+import com.gymtracker.MainActivity
 import com.gymtracker.data.database.entities.*
 import com.gymtracker.data.model.MuscleGroup
 import com.gymtracker.data.model.SetType
@@ -142,6 +147,42 @@ class ActiveWorkoutViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private var elapsedTimerJob: Job? = null
+    private var inactivityJob: Job? = null
+    private var lastInteractionTime = System.currentTimeMillis()
+
+    private fun recordInteraction() {
+        lastInteractionTime = System.currentTimeMillis()
+    }
+
+    private fun openAppIntent(): PendingIntent {
+        val intent = Intent(app, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        return PendingIntent.getActivity(
+            app, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun startInactivityMonitor() {
+        inactivityJob?.cancel()
+        inactivityJob = viewModelScope.launch {
+            while (true) {
+                delay(30_000L)
+                if (System.currentTimeMillis() - lastInteractionTime >= 10 * 60 * 1000L) {
+                    val notification = NotificationCompat.Builder(app, GymTrackerApp.CHANNEL_WORKOUT_REMINDER)
+                        .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                        .setContentTitle("Still working out?")
+                        .setContentText("No activity for 10 minutes — tap to resume your workout")
+                        .setContentIntent(openAppIntent())
+                        .setAutoCancel(true)
+                        .build()
+                    NotificationManagerCompat.from(app).notify(NOTIF_INACTIVITY, notification)
+                    break // notify once, stop monitoring
+                }
+            }
+        }
+    }
 
     init {
         elapsedTimerJob = viewModelScope.launch {
@@ -155,6 +196,8 @@ class ActiveWorkoutViewModel(
                 _elapsedSeconds.value++
             }
         }
+        startInactivityMonitor()
+
         // Auto-init edit states and load previous sets when exercises update
         viewModelScope.launch {
             exercises.collect { exList ->
@@ -185,17 +228,20 @@ class ActiveWorkoutViewModel(
     }
 
     fun updateSetWeight(setId: Long, weight: String) {
+        recordInteraction()
         _setEditStates.value = _setEditStates.value +
                 (setId to (_setEditStates.value[setId] ?: SetEditState()).copy(weightText = weight, isPrefilled = false))
     }
 
     fun updateSetReps(setId: Long, reps: String) {
+        recordInteraction()
         _setEditStates.value = _setEditStates.value +
                 (setId to (_setEditStates.value[setId] ?: SetEditState()).copy(repsText = reps, isPrefilled = false))
         if (reps.isNotEmpty()) _invalidSetIds.value = _invalidSetIds.value - setId
     }
 
     fun updateSetRpe(setId: Long, rpe: Float?) {
+        recordInteraction()
         _setEditStates.value = _setEditStates.value +
                 (setId to (_setEditStates.value[setId] ?: SetEditState()).copy(rpe = rpe))
     }
@@ -210,6 +256,7 @@ class ActiveWorkoutViewModel(
     }
 
     fun completeSet(set: WorkoutSetEntity, restSeconds: Int) {
+        recordInteraction()
         val editState = _setEditStates.value[set.id] ?: SetEditState()
         val reps = editState.repsText.toIntOrNull() ?: 0
         if (reps < 1) {
@@ -226,6 +273,7 @@ class ActiveWorkoutViewModel(
     }
 
     fun addSet(workoutExerciseId: Long, exerciseId: Long, currentSets: List<WorkoutSetEntity>) {
+        recordInteraction()
         viewModelScope.launch {
             val newSetId = repo.addSet(workoutExerciseId, currentSets.size + 1)
             val lastSet = currentSets.lastOrNull { it.isCompleted }
@@ -248,6 +296,7 @@ class ActiveWorkoutViewModel(
     }
 
     fun addExercise(exerciseId: Long) {
+        recordInteraction()
         viewModelScope.launch {
             val workoutExId = repo.addExerciseToWorkout(sessionId, exerciseId, exercises.value.size)
             repo.addSet(workoutExId, 1)
@@ -296,7 +345,6 @@ class ActiveWorkoutViewModel(
         _restSecondsRemaining.value = seconds
         _restTimerActive.value = true
         restTimerJob = viewModelScope.launch {
-            // Get vibrator from app context — works even when UI is in background
             val vibrator = app.getSystemService(android.os.Vibrator::class.java)
             while (_restSecondsRemaining.value > 0) {
                 delay(1000)
@@ -310,6 +358,16 @@ class ActiveWorkoutViewModel(
                         @Suppress("DEPRECATION")
                         vibrator?.vibrate(180)
                     }
+                }
+                if (rem == 5) {
+                    val notification = NotificationCompat.Builder(app, GymTrackerApp.CHANNEL_WORKOUT_REMINDER)
+                        .setSmallIcon(android.R.drawable.ic_media_play)
+                        .setContentTitle("Get ready!")
+                        .setContentText("Rest ending in 5 seconds — next set incoming")
+                        .setContentIntent(openAppIntent())
+                        .setAutoCancel(true)
+                        .build()
+                    NotificationManagerCompat.from(app).notify(NOTIF_REST_WARNING, notification)
                 }
             }
             _restTimerActive.value = false
@@ -334,7 +392,10 @@ class ActiveWorkoutViewModel(
     fun finishAndLoadStats() {
         _finalElapsedSeconds.value = _elapsedSeconds.value
         elapsedTimerJob?.cancel()
+        inactivityJob?.cancel()
         cancelRestTimer()
+        NotificationManagerCompat.from(app).cancel(NOTIF_INACTIVITY)
+        NotificationManagerCompat.from(app).cancel(NOTIF_REST_WARNING)
         app.activeWorkoutSessionId.value = null
         viewModelScope.launch {
             repo.finishWorkoutSession(sessionId)
@@ -353,6 +414,9 @@ class ActiveWorkoutViewModelFactory(
         return ActiveWorkoutViewModel(app, sessionId) as T
     }
 }
+
+private const val NOTIF_REST_WARNING = 2001
+private const val NOTIF_INACTIVITY   = 2002
 
 // ═══════════════════════════════════════════════════════════════
 // ACTIVE WORKOUT SCREEN

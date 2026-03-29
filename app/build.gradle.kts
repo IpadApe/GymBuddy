@@ -97,6 +97,9 @@ dependencies {
     // Work Manager for background tasks
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
+    // NanoHTTPD — embedded HTTP server for watch sync
+    implementation("org.nanohttpd:nanohttpd:2.3.1")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

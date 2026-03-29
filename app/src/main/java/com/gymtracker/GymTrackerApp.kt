@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.os.Build
 import com.gymtracker.data.database.AppDatabase
 import com.gymtracker.data.repository.GymRepository
+import com.gymtracker.data.sync.WatchSyncServer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,11 +23,28 @@ class GymTrackerApp : Application() {
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    private lateinit var watchSyncServer: WatchSyncServer
+
     override fun onCreate() {
         super.onCreate()
         instance = this
         createNotificationChannels()
         seedDatabase()
+        startWatchSyncServer()
+    }
+
+    private fun startWatchSyncServer() {
+        watchSyncServer = WatchSyncServer(this, applicationScope)
+        try {
+            watchSyncServer.start()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onTerminate() {
+        super.onTerminate()
+        if (::watchSyncServer.isInitialized) watchSyncServer.stop()
     }
 
     private fun createNotificationChannels() {
@@ -56,10 +74,20 @@ class GymTrackerApp : Application() {
                 description = "Personal record celebrations"
             }
 
+            val reminderChannel = NotificationChannel(
+                CHANNEL_WORKOUT_REMINDER,
+                "Workout Reminders",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Rest timer warnings and inactivity reminders"
+                enableVibration(true)
+            }
+
             val nm = getSystemService(NotificationManager::class.java)
             nm.createNotificationChannel(restTimerChannel)
             nm.createNotificationChannel(workoutChannel)
             nm.createNotificationChannel(prChannel)
+            nm.createNotificationChannel(reminderChannel)
         }
     }
 
@@ -77,5 +105,6 @@ class GymTrackerApp : Application() {
         const val CHANNEL_REST_TIMER = "rest_timer"
         const val CHANNEL_WORKOUT = "workout"
         const val CHANNEL_PR = "personal_record"
+        const val CHANNEL_WORKOUT_REMINDER = "workout_reminder"
     }
 }
