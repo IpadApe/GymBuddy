@@ -1,0 +1,22 @@
+{
+  "name": "gymbuddy-zepp",
+  "version": "1.0.0",
+  "description": "GymBuddy workout tracker for Amazfit T-REX 2 (Zepp OS 2.0)",
+  "scripts": {
+    "dev": "zeus dev",
+    "build": "zeus build",
+    "sim": "zeus simulator"
+  },
+  "devDependencies": {
+    "@zeppos/zeus-cli": "^1.8.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "zeppos-app-utils": "^1.0.0"
+  },
+  "_moduleAliases": {
+    "zeppos-app-utils": "./node_modules/@zeppos/zeus-cli/private-modules/zeppos-app-utils"
+  }
+}

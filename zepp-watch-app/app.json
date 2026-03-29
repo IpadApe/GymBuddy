@@ -1,0 +1,52 @@
+{
+  "configVersion": "2",
+  "defaultLanguage": "en-US",
+  "app": {
+    "appId": 1109849,
+    "appName": "GymBuddy",
+    "appType": "app",
+    "version": {
+      "code": 1,
+      "name": "1.0.0"
+    },
+    "vender": "GymBuddy",
+    "description": "GymBuddy workout tracker for Amazfit T-REX 3",
+    "icon": "icon.png"
+  },
+  "targets": {
+    "matterhorn": {
+      "platforms": [
+        {
+          "name": "Matterhorn",
+          "deviceSource": 8716544
+        }
+      ],
+      "module": {
+        "page": {
+          "pages": [
+            "page/home/index",
+            "page/workout/exercise-select",
+            "page/workout/log-set",
+            "page/workout/rest-timer",
+            "page/workout/summary",
+            "page/history/index"
+          ]
+        },
+        "app-side": {
+          "path": "app-side/index"
+        }
+      }
+    }
+  },
+  "permissions": [
+    "device:os.health.heart_rate",
+    "device:os.bg.run"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "1.0.0",
+      "target": "4.0",
+      "minVersion": "1.0.0"
+    }
+  }
+}
