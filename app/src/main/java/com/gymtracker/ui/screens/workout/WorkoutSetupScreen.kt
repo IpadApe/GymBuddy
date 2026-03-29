@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -79,7 +80,7 @@ fun WorkoutSetupScreen(
             TopAppBar(
                 title = { Text("Start Workout") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
@@ -115,8 +116,8 @@ fun WorkoutSetupScreen(
                     ) {
                         Icon(
                             when (split) {
-                                SplitType.PUSH -> Icons.Filled.ArrowForward
-                                SplitType.PULL -> Icons.Filled.ArrowBack
+                                SplitType.PUSH -> Icons.AutoMirrored.Filled.ArrowForward
+                                SplitType.PULL -> Icons.AutoMirrored.Filled.ArrowBack
                                 SplitType.LEGS -> Icons.Filled.DirectionsWalk
                                 SplitType.UPPER -> Icons.Filled.North
                                 SplitType.LOWER -> Icons.Filled.South

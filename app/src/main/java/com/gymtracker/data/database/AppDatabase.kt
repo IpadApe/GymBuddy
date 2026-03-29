@@ -20,7 +20,7 @@ import com.gymtracker.data.database.entities.*
         UserPreferencesEntity::class
     ],
     version = 3,
-    exportSchema = true
+    exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 

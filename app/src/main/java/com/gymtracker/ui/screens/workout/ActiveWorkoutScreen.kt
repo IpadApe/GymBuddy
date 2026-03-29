@@ -54,6 +54,7 @@ import com.gymtracker.data.model.MuscleGroup
 import com.gymtracker.data.model.SetType
 import com.gymtracker.ui.components.*
 import com.gymtracker.util.FormatUtils
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -93,6 +94,7 @@ fun getExerciseInputMode(exercise: ExerciseEntity): ExerciseInputMode {
 // VIEW MODEL
 // ═══════════════════════════════════════════════════════════════
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ActiveWorkoutViewModel(
     private val app: GymTrackerApp,
     private val sessionId: Long

@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -213,7 +214,7 @@ fun ProgressScreen(
                 StatCard("Week Volume", FormatUtils.formatVolume(state.weeklyVolume, state.useMetric),
                     Icons.Filled.FitnessCenter, BlueTrust, Modifier.weight(1f))
                 StatCard("Month Volume", FormatUtils.formatVolume(state.monthlyVolume, state.useMetric),
-                    Icons.Filled.TrendingUp, TealSuccess, Modifier.weight(1f))
+                    Icons.AutoMirrored.Filled.TrendingUp, TealSuccess, Modifier.weight(1f))
             }
         }
         item {
@@ -327,7 +328,7 @@ fun ProgressScreen(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Filled.TrendingUp, null, tint = TealSuccess, modifier = Modifier.size(24.dp))
+                        Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = TealSuccess, modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(suggestion.exerciseName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)

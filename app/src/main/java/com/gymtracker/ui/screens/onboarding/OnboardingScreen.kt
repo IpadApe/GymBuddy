@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -143,7 +144,7 @@ fun OnboardingScreen(
                 GradientButton(
                     text = "Next",
                     onClick = { currentPage++ },
-                    icon = Icons.Filled.ArrowForward,
+                    icon = Icons.AutoMirrored.Filled.ArrowForward,
                     modifier = Modifier.width(140.dp)
                 )
             } else {
@@ -230,7 +231,7 @@ fun GoalPage(selectedGoal: String, onGoalChange: (String) -> Unit) {
                         when (goal) {
                             TrainingGoal.STRENGTH -> Icons.Filled.FitnessCenter
                             TrainingGoal.HYPERTROPHY -> Icons.Filled.AutoAwesome
-                            TrainingGoal.ENDURANCE -> Icons.Filled.DirectionsRun
+                            TrainingGoal.ENDURANCE -> Icons.AutoMirrored.Filled.DirectionsRun
                             TrainingGoal.FAT_LOSS -> Icons.Filled.LocalFireDepartment
                         },
                         null,

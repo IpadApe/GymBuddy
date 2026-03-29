@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -120,7 +121,7 @@ fun SettingsScreen(
         item { SectionHeader(title = "Notifications") }
         item {
             SettingsToggle(
-                icon = Icons.Filled.VolumeUp,
+                icon = Icons.AutoMirrored.Filled.VolumeUp,
                 title = "Sound Alerts",
                 subtitle = "Play sound when rest timer completes",
                 checked = p.soundEnabled,

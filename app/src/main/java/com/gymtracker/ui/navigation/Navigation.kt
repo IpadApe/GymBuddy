@@ -4,6 +4,8 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.automirrored.outlined.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -63,7 +65,7 @@ val bottomNavItems = listOf(
     BottomNavItem("Home", Screen.Home.route, Icons.Filled.Home, Icons.Outlined.Home),
     BottomNavItem("Exercises", Screen.Exercises.route, Icons.Filled.FitnessCenter, Icons.Outlined.FitnessCenter),
     BottomNavItem("Routines", Screen.Routines.route, Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth),
-    BottomNavItem("Progress", Screen.Progress.route, Icons.Filled.TrendingUp, Icons.Outlined.TrendingUp),
+    BottomNavItem("Progress", Screen.Progress.route, Icons.AutoMirrored.Filled.TrendingUp, Icons.AutoMirrored.Outlined.TrendingUp),
     BottomNavItem("Settings", Screen.Settings.route, Icons.Filled.Settings, Icons.Outlined.Settings)
 )
 
