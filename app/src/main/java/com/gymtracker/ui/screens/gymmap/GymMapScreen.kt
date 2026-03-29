@@ -3,18 +3,29 @@ package com.gymtracker.ui.screens.gymmap
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.ViewModel
@@ -26,8 +37,8 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.LocationServices
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -35,18 +46,28 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import java.net.URLEncoder
+import java.util.concurrent.TimeUnit
 
-// ─── Data model ───────────────────────────────────────────────────────────────
+// ─── Data models ──────────────────────────────────────────────────────────────
 
 data class GymPlace(
     val name: String,
     val address: String,
+    val lat: Double,
+    val lng: Double
+)
+
+data class GeocodedPlace(
+    val displayName: String,
+    val shortName: String,
     val lat: Double,
     val lng: Double
 )
@@ -58,35 +79,64 @@ sealed class GymMapUiState {
     object PermissionDenied : GymMapUiState()
     data class Error(val message: String) : GymMapUiState()
     data class Success(
-        val userLat: Double,
-        val userLng: Double,
+        val centerLat: Double,
+        val centerLng: Double,
         val gyms: List<GymPlace>
     ) : GymMapUiState()
 }
 
 // ─── ViewModel ────────────────────────────────────────────────────────────────
 
+@OptIn(FlowPreview::class)
 class GymMapViewModel(private val context: Context) : ViewModel() {
+
     private val _uiState = MutableStateFlow<GymMapUiState>(GymMapUiState.Loading)
     val uiState: StateFlow<GymMapUiState> = _uiState
 
-    private val httpClient = OkHttpClient()
+    // Search bar text
+    val searchQuery = MutableStateFlow("")
+
+    // Nominatim suggestions
+    private val _searchResults = MutableStateFlow<List<GeocodedPlace>>(emptyList())
+    val searchResults: StateFlow<List<GeocodedPlace>> = _searchResults
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching
+
+    // Remember GPS coords so the FAB can always snap back
+    private var gpsLat = 0.0
+    private var gpsLng = 0.0
+
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(35, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
+        .build()
+
+    private val overpassServers = listOf(
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+        "https://overpass.openstreetmap.ru/api/interpreter"
+    )
+
+    // ── Location permission flow ─────────────────────────────────────────────
 
     @SuppressLint("MissingPermission")
     fun loadNearbyGyms() {
         viewModelScope.launch {
             _uiState.value = GymMapUiState.Loading
             try {
-                val fusedClient = LocationServices.getFusedLocationProviderClient(context)
-                val location = fusedClient.lastLocation.await()
-                if (location == null) {
+                val fused = LocationServices.getFusedLocationProviderClient(context)
+                val loc = fused.lastLocation.await() ?: run {
                     _uiState.value = GymMapUiState.Error(
                         "Could not get your current location.\nMake sure GPS is enabled and try again."
                     )
                     return@launch
                 }
-                val gyms = fetchNearbyGyms(location.latitude, location.longitude)
-                _uiState.value = GymMapUiState.Success(location.latitude, location.longitude, gyms)
+                gpsLat = loc.latitude
+                gpsLng = loc.longitude
+                val gyms = fetchNearbyGyms(gpsLat, gpsLng)
+                _uiState.value = GymMapUiState.Success(gpsLat, gpsLng, gyms)
             } catch (e: Exception) {
                 _uiState.value = GymMapUiState.Error(e.message ?: "Unknown error occurred")
             }
@@ -97,58 +147,195 @@ class GymMapViewModel(private val context: Context) : ViewModel() {
         _uiState.value = GymMapUiState.PermissionDenied
     }
 
-    /** Overpass API — free, no key required, uses OpenStreetMap data. */
+    // ── Search (Nominatim geocoding) ─────────────────────────────────────────
+
+    fun searchPlaces(query: String) {
+        if (query.isBlank()) {
+            _searchResults.value = emptyList()
+            return
+        }
+        viewModelScope.launch {
+            _isSearching.value = true
+            try {
+                _searchResults.value = geocode(query)
+            } catch (_: Exception) {
+                _searchResults.value = emptyList()
+            } finally {
+                _isSearching.value = false
+            }
+        }
+    }
+
+    fun selectPlace(place: GeocodedPlace) {
+        searchQuery.value = place.shortName
+        _searchResults.value = emptyList()
+        viewModelScope.launch {
+            _uiState.value = GymMapUiState.Loading
+            try {
+                val gyms = fetchNearbyGyms(place.lat, place.lng)
+                _uiState.value = GymMapUiState.Success(place.lat, place.lng, gyms)
+            } catch (e: Exception) {
+                _uiState.value = GymMapUiState.Error(e.message ?: "Search failed")
+            }
+        }
+    }
+
+    fun clearSearch() {
+        searchQuery.value = ""
+        _searchResults.value = emptyList()
+    }
+
+    fun returnToGps() {
+        if (gpsLat == 0.0 && gpsLng == 0.0) {
+            loadNearbyGyms()
+        } else {
+            clearSearch()
+            viewModelScope.launch {
+                _uiState.value = GymMapUiState.Loading
+                try {
+                    val gyms = fetchNearbyGyms(gpsLat, gpsLng)
+                    _uiState.value = GymMapUiState.Success(gpsLat, gpsLng, gyms)
+                } catch (e: Exception) {
+                    _uiState.value = GymMapUiState.Error(e.message ?: "Unknown error")
+                }
+            }
+        }
+    }
+
+    // ── Nominatim geocoding ──────────────────────────────────────────────────
+
+    private suspend fun geocode(query: String): List<GeocodedPlace> =
+        withContext(Dispatchers.IO) {
+            val encoded = URLEncoder.encode(query, "UTF-8")
+            val url = "https://nominatim.openstreetmap.org/search" +
+                "?q=$encoded&format=json&limit=5&addressdetails=0"
+            val request = Request.Builder()
+                .url(url)
+                .header("User-Agent", context.packageName)
+                .get()
+                .build()
+            val response = httpClient.newCall(request).execute()
+            val body = response.body?.string() ?: return@withContext emptyList()
+            parseNominatim(body)
+        }
+
+    private fun parseNominatim(json: String): List<GeocodedPlace> {
+        return try {
+            val arr = JSONArray(json)
+            buildList {
+                for (i in 0 until arr.length()) {
+                    val obj = arr.getJSONObject(i)
+                    val full = obj.getString("display_name")
+                    val short = full.split(",").take(2).joinToString(", ").trim()
+                    add(
+                        GeocodedPlace(
+                            displayName = full,
+                            shortName = short,
+                            lat = obj.getString("lat").toDouble(),
+                            lng = obj.getString("lon").toDouble()
+                        )
+                    )
+                }
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    // ── Overpass gym search ──────────────────────────────────────────────────
+
     private suspend fun fetchNearbyGyms(lat: Double, lng: Double): List<GymPlace> =
         withContext(Dispatchers.IO) {
+            /*
+             * Strategy — three complementary passes, all within 7 km:
+             *
+             * 1. Tag-based (standard OSM keys):
+             *    leisure = fitness_centre | health_club
+             *    amenity = gym | fitness_centre
+             *    sport   = fitness | bodybuilding | crossfit | weightlifting
+             *              (regex so "fitness;yoga", "fitness;crossfit" also match)
+             *
+             * 2. Sports-centre sub-filter:
+             *    leisure=sports_centre that explicitly lists a fitness sport
+             *    (avoids picking up football clubs, swimming pools, etc.)
+             *
+             * 3. Name catch-all:
+             *    Picks up gyms that only have a name tag but no proper
+             *    leisure/sport tag — e.g. "GymRat", "Arena Gym", "Max Fitness",
+             *    "CrossFit Praha", "Posilovna u Nováků".
+             *
+             * nwr = node + way + relation in one shot.
+             * out center tags = gives a lat/lng centre for ways & relations.
+             */
             val query = """
-                [out:json][timeout:15];
+                [out:json][timeout:30];
                 (
-                  node["leisure"="fitness_centre"](around:5000,$lat,$lng);
-                  node["amenity"="gym"](around:5000,$lat,$lng);
-                  way["leisure"="fitness_centre"](around:5000,$lat,$lng);
-                  way["amenity"="gym"](around:5000,$lat,$lng);
+                  nwr["leisure"~"^(fitness_centre|health_club)${'$'}"](around:7000,$lat,$lng);
+                  nwr["amenity"~"^(gym|fitness_centre)${'$'}"](around:7000,$lat,$lng);
+                  nwr["sport"~"fitness|bodybuilding|crossfit|weightlifting"](around:7000,$lat,$lng);
+                  nwr["leisure"="sports_centre"]["sport"~"fitness|bodybuilding|crossfit"](around:7000,$lat,$lng);
+                  nwr["name"~"gym|fitness|posilovna|crossfit|fitcentrum|fitnes",i](around:7000,$lat,$lng);
                 );
-                out center;
+                out center tags;
             """.trimIndent()
 
             val body = query.toRequestBody("text/plain".toMediaType())
-            val request = Request.Builder()
-                .url("https://overpass-api.de/api/interpreter")
-                .post(body)
-                .build()
-
-            val response = httpClient.newCall(request).execute()
-            val json = response.body?.string() ?: return@withContext emptyList()
-            parseOverpassResponse(json)
+            var lastError: Exception? = null
+            for (server in overpassServers) {
+                try {
+                    val req = Request.Builder().url(server).post(body).build()
+                    val resp = httpClient.newCall(req).execute()
+                    if (!resp.isSuccessful) continue
+                    val json = resp.body?.string() ?: continue
+                    return@withContext parseOverpass(json)
+                } catch (e: Exception) {
+                    lastError = e
+                }
+            }
+            throw lastError ?: Exception("All Overpass servers failed")
         }
 
-    private fun parseOverpassResponse(json: String): List<GymPlace> {
+    private fun parseOverpass(json: String): List<GymPlace> {
         return try {
             val elements = JSONObject(json).optJSONArray("elements") ?: return emptyList()
+            val seen = mutableSetOf<String>()
             buildList {
                 for (i in 0 until elements.length()) {
                     val el = elements.getJSONObject(i)
                     val tags = el.optJSONObject("tags") ?: continue
-                    val name = tags.optString("name").takeIf { it.isNotBlank() } ?: "Gym"
-                    val address = buildAddress(tags)
 
-                    // nodes have lat/lon directly; ways have a "center" object
-                    val lat: Double
-                    val lng: Double
-                    if (el.has("lat")) {
-                        lat = el.getDouble("lat")
-                        lng = el.getDouble("lon")
+                    // Prefer explicit name, fall back to brand, then derive from tag
+                    val name = tags.optString("name").takeIf { it.isNotBlank() }
+                        ?: tags.optString("brand").takeIf { it.isNotBlank() }
+                        ?: tags.optString("operator").takeIf { it.isNotBlank() }
+                        ?: inferName(tags)
+                        ?: continue
+
+                    if (!seen.add(name.lowercase().trim())) continue
+
+                    val address = buildAddress(tags)
+                    val (elLat, elLng) = if (el.has("lat")) {
+                        el.getDouble("lat") to el.getDouble("lon")
                     } else {
-                        val center = el.optJSONObject("center") ?: continue
-                        lat = center.getDouble("lat")
-                        lng = center.getDouble("lon")
+                        val c = el.optJSONObject("center") ?: continue
+                        c.getDouble("lat") to c.getDouble("lon")
                     }
-                    add(GymPlace(name, address, lat, lng))
+                    add(GymPlace(name, address, elLat, elLng))
                 }
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emptyList()
         }
+    }
+
+    /** Derive a display name for tagged-but-unnamed elements. */
+    private fun inferName(tags: JSONObject): String? = when {
+        tags.optString("leisure").contains("fitness") -> "Fitness Center"
+        tags.optString("amenity") == "gym"            -> "Gym"
+        tags.optString("sport").contains("crossfit")  -> "CrossFit"
+        tags.optString("sport").contains("fitness")   -> "Fitness Center"
+        tags.optString("sport").contains("bodybuilding") -> "Gym"
+        else -> null
     }
 
     private fun buildAddress(tags: JSONObject): String {
@@ -170,7 +357,7 @@ class GymMapViewModelFactory(private val context: Context) : ViewModelProvider.F
     }
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
+// ─── Screen root ──────────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -181,28 +368,22 @@ fun GymMapScreen(
 
     val locationPermission = rememberPermissionState(
         permission = Manifest.permission.ACCESS_FINE_LOCATION
-    ) { isGranted ->
-        if (isGranted) viewModel.loadNearbyGyms() else viewModel.onPermissionDenied()
+    ) { granted ->
+        if (granted) viewModel.loadNearbyGyms() else viewModel.onPermissionDenied()
     }
 
     LaunchedEffect(Unit) {
-        if (locationPermission.status.isGranted) {
-            viewModel.loadNearbyGyms()
-        } else {
-            locationPermission.launchPermissionRequest()
-        }
+        if (locationPermission.status.isGranted) viewModel.loadNearbyGyms()
+        else locationPermission.launchPermissionRequest()
     }
 
     when (val state = uiState) {
-        is GymMapUiState.Loading -> MapLoadingContent()
+        is GymMapUiState.Loading       -> MapLoadingContent()
         is GymMapUiState.PermissionDenied -> MapPermissionDeniedContent(
             onRetry = { locationPermission.launchPermissionRequest() }
         )
-        is GymMapUiState.Error -> MapErrorContent(
-            message = state.message,
-            onRetry = { viewModel.loadNearbyGyms() }
-        )
-        is GymMapUiState.Success -> GymMapContent(state = state)
+        is GymMapUiState.Error         -> MapErrorContent(state.message) { viewModel.loadNearbyGyms() }
+        is GymMapUiState.Success       -> GymMapContent(state, viewModel)
     }
 }
 
@@ -230,26 +411,17 @@ private fun MapPermissionDeniedContent(onRetry: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(
-                Icons.Filled.LocationOff, null,
-                modifier = Modifier.size(56.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Icon(Icons.Filled.LocationOff, null, Modifier.size(56.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Location Permission Needed",
+                style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(
-                "Location Permission Needed",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                "GymMap needs your location to show nearby gyms. " +
-                    "Please grant the location permission.",
+                "GymMap needs your location to show nearby gyms.",
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Button(onClick = onRetry, shape = RoundedCornerShape(10.dp)) {
-                Text("Grant Permission")
-            }
+            Button(onClick = onRetry, shape = RoundedCornerShape(10.dp)) { Text("Grant Permission") }
         }
     }
 }
@@ -263,60 +435,58 @@ private fun MapErrorContent(message: String, onRetry: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(
-                Icons.Filled.LocationOff, null,
-                modifier = Modifier.size(56.dp),
-                tint = MaterialTheme.colorScheme.error
-            )
-            Text(
-                "Could Not Load Map",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                message,
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Button(onClick = onRetry, shape = RoundedCornerShape(10.dp)) {
-                Text("Retry")
-            }
+            Icon(Icons.Filled.LocationOff, null, Modifier.size(56.dp),
+                tint = MaterialTheme.colorScheme.error)
+            Text("Could Not Load Map",
+                style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(message, style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Button(onClick = onRetry, shape = RoundedCornerShape(10.dp)) { Text("Retry") }
         }
     }
 }
 
-// ─── Map content (osmdroid) ───────────────────────────────────────────────────
+// ─── Map + search overlay ────────────────────────────────────────────────────
 
+@SuppressLint("MissingPermission")
 @Composable
-private fun GymMapContent(state: GymMapUiState.Success) {
+private fun GymMapContent(state: GymMapUiState.Success, viewModel: GymMapViewModel) {
     val context = LocalContext.current
-    val userPoint = remember(state.userLat, state.userLng) {
-        GeoPoint(state.userLat, state.userLng)
-    }
+    val focusManager = LocalFocusManager.current
 
-    // Build MapView once; update markers when gym list changes
+    val searchQuery by viewModel.searchQuery.collectAsState()
+    val searchResults by viewModel.searchResults.collectAsState()
+    val isSearching by viewModel.isSearching.collectAsState()
+
+    // Build MapView once
     val mapView = remember {
         Configuration.getInstance().userAgentValue = context.packageName
         MapView(context).apply {
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
-            controller.setZoom(15.0)
-            controller.setCenter(userPoint)
+            controller.setZoom(14.0)
+            controller.setCenter(GeoPoint(state.centerLat, state.centerLng))
         }
     }
 
-    // Drop markers whenever the gym list is available
+    // Animate camera whenever the center location changes (GPS load or search result)
+    LaunchedEffect(state.centerLat, state.centerLng) {
+        mapView.controller.animateTo(GeoPoint(state.centerLat, state.centerLng))
+        mapView.controller.zoomTo(14.0, 500L)
+    }
+
+    // Refresh markers whenever the gym list changes
     LaunchedEffect(state.gyms) {
         mapView.overlays.clear()
         state.gyms.forEach { gym ->
-            val marker = Marker(mapView).apply {
-                position = GeoPoint(gym.lat, gym.lng)
-                title = gym.name
-                snippet = gym.address
-                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-            }
-            mapView.overlays.add(marker)
+            mapView.overlays.add(
+                Marker(mapView).apply {
+                    position = GeoPoint(gym.lat, gym.lng)
+                    title = gym.name
+                    snippet = gym.address
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                }
+            )
         }
         mapView.invalidate()
     }
@@ -327,17 +497,140 @@ private fun GymMapContent(state: GymMapUiState.Success) {
     }
 
     Box(Modifier.fillMaxSize()) {
-        AndroidView(
-            factory = { mapView },
-            modifier = Modifier.fillMaxSize()
-        )
 
-        // Gyms-found badge
-        if (state.gyms.isNotEmpty()) {
+        // ── Map ──────────────────────────────────────────────────────────────
+        AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
+
+        // ── Search bar + suggestions ──────────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+                .align(Alignment.TopCenter)
+        ) {
+            // Search field
+            Card(
+                shape = RoundedCornerShape(14.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (isSearching) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .padding(start = 12.dp)
+                                .size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Icon(
+                            Icons.Filled.Search, null,
+                            modifier = Modifier.padding(start = 12.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    TextField(
+                        value = searchQuery,
+                        onValueChange = { viewModel.searchQuery.value = it },
+                        placeholder = {
+                            Text(
+                                "Search city or area…",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        singleLine = true,
+                        modifier = Modifier
+                            .weight(1f)
+                            .onFocusChanged { /* keep results visible while focused */ },
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                            unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = {
+                            focusManager.clearFocus()
+                            viewModel.searchPlaces(searchQuery)
+                        })
+                    )
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = {
+                            viewModel.clearSearch()
+                            focusManager.clearFocus()
+                        }) {
+                            Icon(Icons.Filled.Close, "Clear search",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+
+            // Suggestions dropdown
+            if (searchResults.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Card(
+                    shape = RoundedCornerShape(14.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    LazyColumn {
+                        items(searchResults) { place ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        focusManager.clearFocus()
+                                        viewModel.selectPlace(place)
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Filled.Search, null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Column {
+                                    Text(
+                                        place.shortName,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        place.displayName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                            if (searchResults.last() != place) {
+                                HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Gyms count badge (only when search bar has no results open) ───────
+        if (state.gyms.isNotEmpty() && searchResults.isEmpty()) {
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 14.dp),
+                    .padding(top = 76.dp),
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
                 tonalElevation = 4.dp
@@ -351,18 +644,18 @@ private fun GymMapContent(state: GymMapUiState.Success) {
             }
         }
 
-        // Re-center FAB
+        // ── Re-center FAB ─────────────────────────────────────────────────────
         FloatingActionButton(
             onClick = {
-                mapView.controller.animateTo(userPoint)
-                mapView.controller.zoomTo(15.0, 500L)
+                focusManager.clearFocus()
+                viewModel.returnToGps()
             },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
             containerColor = MaterialTheme.colorScheme.primary
         ) {
-            Icon(Icons.Filled.MyLocation, contentDescription = "Re-center on my location")
+            Icon(Icons.Filled.MyLocation, contentDescription = "Return to my location")
         }
     }
 }

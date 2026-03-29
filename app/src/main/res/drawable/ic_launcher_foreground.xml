@@ -4,7 +4,28 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
+    <!--
+        Matches the Zepp watch-app icon:
+        • Thick orange ring  (center 54,54 · radius 41 · stroke 10)
+        • Bold orange "G"    (geometric, no serifs, fits inside the ring)
+    -->
+
+    <!-- Orange ring -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M30,30h12v48h-12z M66,30h12v48h-66z M42,48h24v12h-24z" />
+        android:pathData="M13,54 A41,41,0,1,0,95,54 A41,41,0,1,0,13,54 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF6B35"
+        android:strokeWidth="10" />
+
+    <!-- G — C-body: left bar + full-width top bar + full-width bottom bar -->
+    <path
+        android:fillColor="#FF6B35"
+        android:pathData="M36,35 H72 V45 H46 V63 H72 V73 H36 Z" />
+
+    <!-- G — crossbar: right half of the interior opening -->
+    <path
+        android:fillColor="#FF6B35"
+        android:pathData="M60,45 H72 V63 H60 Z" />
+
 </vector>
