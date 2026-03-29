@@ -100,6 +100,21 @@ dependencies {
     // NanoHTTPD — embedded HTTP server for watch sync
     implementation("org.nanohttpd:nanohttpd:2.3.1")
 
+    // OpenStreetMap — no API key required
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
+
+    // Device location (FusedLocationProviderClient) — no API key required
+    implementation("com.google.android.gms:play-services-location:21.2.0")
+
+    // Accompanist Permissions (runtime location permission dialog)
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+
+    // OkHttp — Overpass API calls (no API key required)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Coroutines + Play Services (for Task.await())
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

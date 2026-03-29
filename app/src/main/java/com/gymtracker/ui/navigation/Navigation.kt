@@ -26,6 +26,7 @@ import com.gymtracker.ui.screens.settings.SettingsScreen
 import com.gymtracker.ui.screens.workout.ActiveWorkoutScreen
 import com.gymtracker.ui.screens.workout.WorkoutSetupScreen
 import com.gymtracker.ui.screens.bodymap.BodyMapScreen
+import com.gymtracker.ui.screens.gymmap.GymMapScreen
 import com.gymtracker.ui.screens.onboarding.OnboardingScreen
 
 // ═══════════════════════════════════════════════════════════════
@@ -47,6 +48,7 @@ sealed class Screen(val route: String) {
     object RoutineDetail : Screen("routine/{routineId}") {
         fun createRoute(routineId: Long) = "routine/$routineId"
     }
+    object GymMap : Screen("gym_map")
     object Settings : Screen("settings")
     object Onboarding : Screen("onboarding")
 }
@@ -66,6 +68,7 @@ val bottomNavItems = listOf(
     BottomNavItem("Exercises", Screen.Exercises.route, Icons.Filled.FitnessCenter, Icons.Outlined.FitnessCenter),
     BottomNavItem("Routines", Screen.Routines.route, Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth),
     BottomNavItem("Progress", Screen.Progress.route, Icons.AutoMirrored.Filled.TrendingUp, Icons.AutoMirrored.Outlined.TrendingUp),
+    BottomNavItem("GymMap", Screen.GymMap.route, Icons.Filled.Place, Icons.Outlined.Place),
     BottomNavItem("Settings", Screen.Settings.route, Icons.Filled.Settings, Icons.Outlined.Settings)
 )
 
@@ -79,7 +82,8 @@ fun MainNavigation(startOnboarding: Boolean = false) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val showBottomBar = currentRoute in bottomNavItems.map { it.route } || currentRoute == Screen.BodyMap.route
+    val showBottomBar = currentRoute in bottomNavItems.map { it.route } ||
+        currentRoute == Screen.BodyMap.route
 
     Scaffold(
         bottomBar = {
@@ -215,6 +219,10 @@ fun MainNavigation(startOnboarding: Boolean = false) {
 
             composable(Screen.BodyMap.route) {
                 BodyMapScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Screen.GymMap.route) {
+                GymMapScreen()
             }
 
             composable(Screen.Routines.route) {
