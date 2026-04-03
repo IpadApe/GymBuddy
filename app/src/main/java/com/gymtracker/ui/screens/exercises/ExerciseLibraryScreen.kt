@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -92,6 +94,30 @@ class ExerciseLibraryViewModel(app: GymTrackerApp) : ViewModel() {
             }
         }
     }
+
+    fun createCustomExercise(
+        name: String,
+        primaryMuscle: String,
+        equipment: String,
+        difficulty: String,
+        instructions: String
+    ) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            repo.createExercise(
+                com.gymtracker.data.database.entities.ExerciseEntity(
+                    name = name.trim(),
+                    primaryMuscleGroup = primaryMuscle,
+                    secondaryMuscleGroups = "",
+                    equipmentType = equipment,
+                    movementType = "Isolation",
+                    difficulty = difficulty,
+                    instructions = instructions.trim(),
+                    isCustom = true
+                )
+            )
+        }
+    }
 }
 
 class ExerciseLibraryViewModelFactory : ViewModelProvider.Factory {
@@ -111,8 +137,20 @@ fun ExerciseLibraryScreen(
     viewModel: ExerciseLibraryViewModel = viewModel(factory = ExerciseLibraryViewModelFactory())
 ) {
     val state by viewModel.state.collectAsState()
+    var showCreateDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    if (showCreateDialog) {
+        CreateCustomExerciseDialog(
+            onConfirm = { name, muscle, equip, diff, instructions ->
+                viewModel.createCustomExercise(name, muscle, equip, diff, instructions)
+                showCreateDialog = false
+            },
+            onDismiss = { showCreateDialog = false }
+        )
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
         // Title
         Text(
             "Exercise Library",
@@ -218,5 +256,121 @@ fun ExerciseLibraryScreen(
                 item { Spacer(modifier = Modifier.height(16.dp)) }
             }
         }
-    }
+        }  // end Column
+
+        FloatingActionButton(
+            onClick = { showCreateDialog = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            containerColor = MaterialTheme.colorScheme.primary
+        ) {
+            Icon(Icons.Filled.Add, "Create custom exercise")
+        }
+    }  // end Box
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CreateCustomExerciseDialog(
+    onConfirm: (name: String, muscle: String, equip: String, diff: String, instructions: String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var muscle by remember { mutableStateOf(MuscleGroup.entries.first().displayName) }
+    var equipment by remember { mutableStateOf(EquipmentType.entries.first().displayName) }
+    var difficulty by remember { mutableStateOf("Beginner") }
+    var instructions by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Create Custom Exercise", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Exercise name *") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(8.dp)
+                )
+                // Muscle group dropdown
+                var muscleExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(expanded = muscleExpanded, onExpandedChange = { muscleExpanded = it }) {
+                    OutlinedTextField(
+                        value = muscle,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Primary muscle") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = muscleExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    ExposedDropdownMenu(expanded = muscleExpanded, onDismissRequest = { muscleExpanded = false }) {
+                        MuscleGroup.entries.forEach { m ->
+                            DropdownMenuItem(text = { Text(m.displayName) }, onClick = { muscle = m.displayName; muscleExpanded = false })
+                        }
+                    }
+                }
+                // Equipment dropdown
+                var equipExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(expanded = equipExpanded, onExpandedChange = { equipExpanded = it }) {
+                    OutlinedTextField(
+                        value = equipment,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Equipment") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = equipExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    ExposedDropdownMenu(expanded = equipExpanded, onDismissRequest = { equipExpanded = false }) {
+                        EquipmentType.entries.forEach { e ->
+                            DropdownMenuItem(text = { Text(e.displayName) }, onClick = { equipment = e.displayName; equipExpanded = false })
+                        }
+                    }
+                }
+                // Difficulty
+                var diffExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(expanded = diffExpanded, onExpandedChange = { diffExpanded = it }) {
+                    OutlinedTextField(
+                        value = difficulty,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Difficulty") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = diffExpanded) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    ExposedDropdownMenu(expanded = diffExpanded, onDismissRequest = { diffExpanded = false }) {
+                        listOf("Beginner", "Intermediate", "Advanced").forEach { d ->
+                            DropdownMenuItem(text = { Text(d) }, onClick = { difficulty = d; diffExpanded = false })
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = instructions,
+                    onValueChange = { instructions = it },
+                    label = { Text("Instructions (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 5,
+                    shape = RoundedCornerShape(8.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(name, muscle, equipment, difficulty, instructions) },
+                enabled = name.isNotBlank()
+            ) { Text("Create") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }

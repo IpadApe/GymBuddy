@@ -159,6 +159,14 @@ object ExerciseSeedData {
             "1. Hybrid of close grip bench and skull crusher.\n2. Lower to chin level.\n3. Press up and back.\n4. Advanced movement."))
         add(exercise("French Press", "Triceps", "", "EZ Bar", "Isolation", "Intermediate",
             "1. Seated or standing, bar overhead.\n2. Lower behind head.\n3. Extend up.\n4. Full stretch at bottom."))
+        add(exercise("Straight Bar Tricep Pushdown", "Triceps", "", "Cable", "Isolation", "Beginner",
+            "1. Stand at cable with straight bar attachment.\n2. Grip bar overhand, elbows at sides.\n3. Push bar down until arms fully extended.\n4. Control the return slowly."))
+        add(exercise("V-Bar Tricep Pushdown", "Triceps", "", "Cable", "Isolation", "Beginner",
+            "1. Attach V-bar to cable.\n2. Grip V-bar, elbows tucked to sides.\n3. Push down until arms locked out.\n4. Squeeze triceps at bottom."))
+        add(exercise("Triangle Bar Tricep Pushdown", "Triceps", "", "Cable", "Isolation", "Beginner",
+            "1. Attach triangle/close-grip bar to cable.\n2. Grip bar with palms facing each other.\n3. Push down until arms extended.\n4. Slow return to maintain tension."))
+        add(exercise("Reverse Grip Bench Press", "Chest", "Triceps", "Barbell", "Push", "Intermediate",
+            "1. Lie on flat bench, grip bar with palms facing you (supinated).\n2. Unrack and lower bar to lower chest.\n3. Press up explosively.\n4. Hits upper chest and triceps."))
 
         // ═══════════════════════ FOREARMS ═══════════════════════
         add(exercise("Wrist Curl", "Forearms", "", "Barbell", "Isolation", "Beginner",

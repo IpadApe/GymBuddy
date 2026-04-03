@@ -94,6 +94,7 @@ class GymTrackerApp : Application() {
     private fun seedDatabase() {
         applicationScope.launch {
             repository.seedExercisesIfEmpty()
+            repository.ensureNewExercises()
             repository.seedRoutinesIfEmpty()
         }
     }

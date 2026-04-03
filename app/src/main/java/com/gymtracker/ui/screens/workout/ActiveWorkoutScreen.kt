@@ -127,6 +127,7 @@ class ActiveWorkoutViewModel(
     private val _restTimerActive = MutableStateFlow(false)
     val restTimerActive = _restTimerActive.asStateFlow()
     private var restTimerJob: Job? = null
+    private var restTimerStartMs = 0L
 
     private val _setEditStates = MutableStateFlow<Map<Long, SetEditState>>(emptyMap())
     val setEditStates = _setEditStates.asStateFlow()
@@ -188,14 +189,11 @@ class ActiveWorkoutViewModel(
 
     init {
         elapsedTimerJob = viewModelScope.launch {
-            // Resume from actual start time so timer is correct after background/recreate
             val sess = repo.getSessionById(sessionId)
-            if (sess != null) {
-                _elapsedSeconds.value = ((System.currentTimeMillis() - sess.startTime) / 1000).toInt()
-            }
+            val startTime = sess?.startTime ?: System.currentTimeMillis()
             while (true) {
+                _elapsedSeconds.value = ((System.currentTimeMillis() - startTime) / 1000).toInt()
                 delay(1000)
-                _elapsedSeconds.value++
             }
         }
         startInactivityMonitor()
@@ -311,6 +309,13 @@ class ActiveWorkoutViewModel(
         }
     }
 
+    fun removeExerciseByExerciseId(exerciseId: Long) {
+        viewModelScope.launch {
+            val toRemove = exercises.value.find { it.exercise.id == exerciseId }?.workoutExercise
+            if (toRemove != null) repo.removeExerciseFromWorkout(toRemove)
+        }
+    }
+
     fun changeRestTime(workoutExercise: WorkoutExerciseEntity, seconds: Int) {
         viewModelScope.launch {
             repo.updateWorkoutExercise(workoutExercise.copy(restTimeSeconds = seconds))
@@ -346,13 +351,28 @@ class ActiveWorkoutViewModel(
         _restTimerTotal.value = seconds
         _restSecondsRemaining.value = seconds
         _restTimerActive.value = true
+        restTimerStartMs = System.currentTimeMillis()
+
+        // Start foreground service so the timer continues in background
+        val svcIntent = Intent(app, com.gymtracker.util.RestTimerService::class.java)
+            .putExtra("seconds", seconds)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            app.startForegroundService(svcIntent)
+        } else {
+            app.startService(svcIntent)
+        }
+
+        // ViewModel sync uses absolute time so it never drifts when backgrounded
         restTimerJob = viewModelScope.launch {
             val vibrator = app.getSystemService(android.os.Vibrator::class.java)
-            while (_restSecondsRemaining.value > 0) {
-                delay(1000)
-                _restSecondsRemaining.value--
-                val rem = _restSecondsRemaining.value
-                if (rem in 1..5) {
+            var lastVibrateSec = -1
+            while (true) {
+                delay(200)
+                val remaining = (seconds - (System.currentTimeMillis() - restTimerStartMs) / 1000)
+                    .toInt().coerceAtLeast(0)
+                _restSecondsRemaining.value = remaining
+                if (remaining in 1..5 && remaining != lastVibrateSec) {
+                    lastVibrateSec = remaining
                     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                         vibrator?.vibrate(android.os.VibrationEffect.createOneShot(
                             180, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
@@ -361,18 +381,11 @@ class ActiveWorkoutViewModel(
                         vibrator?.vibrate(180)
                     }
                 }
-                if (rem == 5) {
-                    val notification = NotificationCompat.Builder(app, GymTrackerApp.CHANNEL_WORKOUT_REMINDER)
-                        .setSmallIcon(android.R.drawable.ic_media_play)
-                        .setContentTitle("Get ready!")
-                        .setContentText("Rest ending in 5 seconds — next set incoming")
-                        .setContentIntent(openAppIntent())
-                        .setAutoCancel(true)
-                        .build()
-                    NotificationManagerCompat.from(app).notify(NOTIF_REST_WARNING, notification)
+                if (remaining == 0) {
+                    _restTimerActive.value = false
+                    break
                 }
             }
-            _restTimerActive.value = false
         }
     }
 
@@ -380,6 +393,7 @@ class ActiveWorkoutViewModel(
         restTimerJob?.cancel()
         _restTimerActive.value = false
         _restSecondsRemaining.value = 0
+        app.stopService(Intent(app, com.gymtracker.util.RestTimerService::class.java))
     }
 
     private val _workoutCount = MutableStateFlow(0)
@@ -507,6 +521,7 @@ fun ActiveWorkoutScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
         ) {
             // Sticky rest timer — lives outside the scroll area
             if (restActive) {
@@ -585,6 +600,10 @@ fun ActiveWorkoutScreen(
                     addedInPicker = addedInPicker + exercise.id
                 }
             },
+            onExerciseDeselected = if (!isReplaceMode) { exercise ->
+                viewModel.removeExerciseByExerciseId(exercise.id)
+                addedInPicker = addedInPicker - exercise.id
+            } else null,
             onDismiss = {
                 showExercisePicker = false
                 replaceTargetExercise = null
@@ -714,6 +733,7 @@ private fun formatWeightDisplay(weight: Double): String {
 // EXERCISE SESSION CARD
 // ═══════════════════════════════════════════════════════════════
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExerciseSessionCard(
     exerciseData: ExerciseWithSetsAndInfo,
@@ -739,13 +759,19 @@ fun ExerciseSessionCard(
     var showOptionsMenu by remember { mutableStateOf(false) }
     var showRestTimeDialog by remember { mutableStateOf(false) }
     var showNoteDialog by remember { mutableStateOf(false) }
+    var showGuideSheet by remember { mutableStateOf(false) }
 
     val completedCount = exerciseData.sets.count { it.isCompleted }
     val totalCount = exerciseData.sets.size
 
+    val isFullyComplete = completedCount == totalCount && totalCount > 0
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isFullyComplete)
+                Color(0xFF1B5E20).copy(alpha = 0.35f)
+            else MaterialTheme.colorScheme.surfaceVariant
+        ),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -804,6 +830,11 @@ fun ExerciseSessionCard(
                             expanded = showOptionsMenu,
                             onDismissRequest = { showOptionsMenu = false }
                         ) {
+                            DropdownMenuItem(
+                                text = { Text("How to do this") },
+                                leadingIcon = { Icon(Icons.Filled.Info, null, modifier = Modifier.size(18.dp)) },
+                                onClick = { showOptionsMenu = false; showGuideSheet = true }
+                            )
                             DropdownMenuItem(
                                 text = { Text("Add Note") },
                                 leadingIcon = { Icon(Icons.Filled.Edit, null, modifier = Modifier.size(18.dp)) },
@@ -917,23 +948,69 @@ fun ExerciseSessionCard(
             exerciseData.sets.forEach { set ->
                 val editState = setEditStates[set.id] ?: SetEditState()
                 val prevSet = previousSets.getOrNull(set.setNumber - 1)
-                SetRow(
-                    set = set,
-                    editState = editState,
-                    inputMode = inputMode,
-                    previousSet = prevSet,
-                    repsInvalid = set.id in invalidSetIds,
-                    rpeExpanded = rpeExpandedForSetId == set.id,
-                    onWeightChange = { onUpdateWeight(set.id, it) },
-                    onRepsChange = { onUpdateReps(set.id, it) },
-                    onRpeChange = { onUpdateRpe(set.id, it) },
-                    onToggleRpe = {
-                        rpeExpandedForSetId = if (rpeExpandedForSetId == set.id) null else set.id
-                    },
-                    onChangeSetType = { onChangeSetType(set) },
-                    onComplete = { onCompleteSet(set) },
-                    onDelete = { onDeleteSet(set) }
+                val dismissState = rememberSwipeToDismissBoxState(
+                    confirmValueChange = { value ->
+                        if (value == SwipeToDismissBoxValue.EndToStart) {
+                            onDeleteSet(set)
+                            true
+                        } else false
+                    }
                 )
+                SwipeToDismissBox(
+                    state = dismissState,
+                    enableDismissFromEndToStart = true,
+                    enableDismissFromStartToEnd = false,
+                    backgroundContent = {
+                        // No fill — just a faint trash icon that appears on the right as you swipe
+                        val isDismissing = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 12.dp),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Icon(
+                                Icons.Filled.Delete,
+                                contentDescription = "Delete set",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                    alpha = if (isDismissing) 0.7f else 0.25f
+                                ),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                ) {
+                    // Solid background so the whole row slides as one unit (not just the widgets)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (set.isCompleted)
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 1f)
+                                else
+                                    MaterialTheme.colorScheme.surfaceVariant
+                            )
+                    ) {
+                        SetRow(
+                            set = set,
+                            editState = editState,
+                            inputMode = inputMode,
+                            previousSet = prevSet,
+                            repsInvalid = set.id in invalidSetIds,
+                            rpeExpanded = rpeExpandedForSetId == set.id,
+                            onWeightChange = { onUpdateWeight(set.id, it) },
+                            onRepsChange = { onUpdateReps(set.id, it) },
+                            onRpeChange = { onUpdateRpe(set.id, it) },
+                            onToggleRpe = {
+                                rpeExpandedForSetId = if (rpeExpandedForSetId == set.id) null else set.id
+                            },
+                            onChangeSetType = { onChangeSetType(set) },
+                            onComplete = { onCompleteSet(set) },
+                            onDelete = { onDeleteSet(set) }
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(6.dp))
             }
 
@@ -1049,6 +1126,103 @@ fun ExerciseSessionCard(
                 TextButton(onClick = { showNoteDialog = false }) { Text("Cancel") }
             }
         )
+    }
+
+    // Exercise guide sheet
+    if (showGuideSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showGuideSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 32.dp)
+            ) {
+                // Title + chips
+                Text(
+                    exerciseData.exercise.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    ChipLabel(
+                        exerciseData.exercise.primaryMuscleGroup,
+                        getMuscleColor(exerciseData.exercise.primaryMuscleGroup)
+                    )
+                    ChipLabel(
+                        exerciseData.exercise.equipmentType,
+                        MaterialTheme.colorScheme.secondary
+                    )
+                    ChipLabel(
+                        exerciseData.exercise.difficulty,
+                        when (exerciseData.exercise.difficulty) {
+                            "Beginner"     -> Color(0xFF4CAF50)
+                            "Intermediate" -> Color(0xFFFF9800)
+                            else           -> Color(0xFFF44336)
+                        }
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(16.dp))
+
+                // Steps — each line that starts with a digit gets its own styled row
+                val steps = exerciseData.exercise.instructions
+                    .split("\n")
+                    .map { it.trim() }
+                    .filter { it.isNotEmpty() }
+
+                if (steps.isEmpty()) {
+                    Text(
+                        "No instructions available.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    steps.forEach { step ->
+                        val isNumbered = step.firstOrNull()?.isDigit() == true
+                        val dotIdx = if (isNumbered) step.indexOf('.') else -1
+                        val number = if (dotIdx > 0) step.substring(0, dotIdx).trim() else null
+                        val text = if (dotIdx > 0) step.substring(dotIdx + 1).trim() else step
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            if (number != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        number,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                            Text(
+                                text,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -1637,7 +1811,8 @@ fun ExercisePickerBottomSheet(
     exercises: List<ExerciseEntity>,
     onExerciseSelected: (ExerciseEntity) -> Unit,
     onDismiss: () -> Unit,
-    addedExerciseIds: Set<Long> = emptySet()
+    addedExerciseIds: Set<Long> = emptySet(),
+    onExerciseDeselected: ((ExerciseEntity) -> Unit)? = null
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedMuscle by remember { mutableStateOf<String?>(null) }
@@ -1794,7 +1969,10 @@ fun ExercisePickerBottomSheet(
                             muscleGroup = exercise.primaryMuscleGroup,
                             equipment = exercise.equipmentType,
                             difficulty = exercise.difficulty,
-                            onClick = { if (!isAdded) onExerciseSelected(exercise) },
+                            onClick = {
+                            if (isAdded) onExerciseDeselected?.invoke(exercise)
+                            else onExerciseSelected(exercise)
+                        },
                             trailing = {
                                 if (isAdded) {
                                     Row(
@@ -1808,7 +1986,7 @@ fun ExercisePickerBottomSheet(
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Text(
-                                            "Added",
+                                            if (onExerciseDeselected != null) "Tap to remove" else "Added",
                                             style = MaterialTheme.typography.labelMedium,
                                             color = Color(0xFF4CAF50),
                                             fontWeight = FontWeight.SemiBold

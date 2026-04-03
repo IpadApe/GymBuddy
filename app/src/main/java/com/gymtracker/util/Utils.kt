@@ -199,7 +199,7 @@ class RestTimerService : Service() {
         }
         timer?.start()
 
-        return START_NOT_STICKY
+        return START_REDELIVER_INTENT
     }
 
     private fun updateNotification(seconds: Int) {

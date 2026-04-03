@@ -121,12 +121,15 @@ class GymRepository(private val db: AppDatabase) {
         db.workoutExerciseDao().getExerciseDetails(sessionId)
 
     suspend fun addExerciseToWorkout(sessionId: Long, exerciseId: Long, order: Int, restTime: Int = 90): Long {
+        val lastRestTime = db.workoutExerciseDao()
+            .getLastWorkoutExerciseForExercise(exerciseId, sessionId)
+            ?.restTimeSeconds ?: restTime
         return db.workoutExerciseDao().insertWorkoutExercise(
             WorkoutExerciseEntity(
                 sessionId = sessionId,
                 exerciseId = exerciseId,
                 orderIndex = order,
-                restTimeSeconds = restTime
+                restTimeSeconds = lastRestTime
             )
         )
     }
@@ -482,10 +485,30 @@ class GymRepository(private val db: AppDatabase) {
     }
 
     // ═══════════════════ SEED DATA ═══════════════════
+    suspend fun createExercise(exercise: com.gymtracker.data.database.entities.ExerciseEntity): Long {
+        return db.exerciseDao().insertExercise(exercise)
+    }
+
     suspend fun seedExercisesIfEmpty() {
         val count = db.exerciseDao().getExerciseCount()
         if (count == 0) {
             db.exerciseDao().insertAll(ExerciseSeedData.getExercises())
+        }
+    }
+
+    /** Inserts exercises added in later versions that existing users don't have yet. */
+    suspend fun ensureNewExercises() {
+        val newNames = listOf(
+            "Straight Bar Tricep Pushdown",
+            "V-Bar Tricep Pushdown",
+            "Triangle Bar Tricep Pushdown",
+            "Reverse Grip Bench Press"
+        )
+        newNames.forEach { name ->
+            if (db.exerciseDao().getExerciseByName(name) == null) {
+                val ex = ExerciseSeedData.getExercises().find { it.name == name }
+                if (ex != null) db.exerciseDao().insertExercise(ex)
+            }
         }
     }
 
