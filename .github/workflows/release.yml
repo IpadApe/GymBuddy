@@ -74,9 +74,9 @@ jobs:
       - name: Rename APK
         run: |
           mv app/build/outputs/apk/release/app-release-unsigned.apk \
-             app/build/outputs/apk/release/gymbuddy-${{ steps.version.outputs.VERSION_NAME }}.apk || \
+             app/build/outputs/apk/release/staystrong-${{ steps.version.outputs.VERSION_NAME }}.apk || \
           mv app/build/outputs/apk/release/app-release.apk \
-             app/build/outputs/apk/release/gymbuddy-${{ steps.version.outputs.VERSION_NAME }}.apk || true
+             app/build/outputs/apk/release/staystrong-${{ steps.version.outputs.VERSION_NAME }}.apk || true
 
       # Update version.json on the main branch so the in-app checker finds the new version
       - name: Update version.json
@@ -85,7 +85,7 @@ jobs:
           TAG="${{ github.ref_name }}"
           VERSION_NAME="${{ steps.version.outputs.VERSION_NAME }}"
           VERSION_CODE="${{ steps.version.outputs.VERSION_CODE }}"
-          DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${TAG}/gymbuddy-${VERSION_NAME}.apk"
+          DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${TAG}/staystrong-${VERSION_NAME}.apk"
 
           # Build release notes from tag annotation message
           RAW_NOTES=$(git tag -l --format='%(contents)' "$TAG" | head -50)
@@ -123,7 +123,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: GymBuddy ${{ steps.version.outputs.VERSION_NAME }}
           body_path: RELEASE_NOTES.md
-          files: app/build/outputs/apk/release/gymbuddy-${{ steps.version.outputs.VERSION_NAME }}.apk
+          files: app/build/outputs/apk/release/staystrong-${{ steps.version.outputs.VERSION_NAME }}.apk
           draft: false
           prerelease: false
         env:

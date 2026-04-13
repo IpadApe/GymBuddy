@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">GymTracker</string>
+    <string name="app_name">StayStrong</string>
     <string name="nav_home">Home</string>
     <string name="nav_workout">Workout</string>
     <string name="nav_exercises">Exercises</string>

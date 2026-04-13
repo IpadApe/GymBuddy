@@ -20,13 +20,13 @@ object AppInstaller {
      * Shows an OS-level download progress notification automatically.
      */
     fun downloadAndInstall(context: Context, downloadUrl: String, versionName: String) {
-        val fileName = "gymbuddy-$versionName.apk"
+        val fileName = "staystrong-$versionName.apk"
         val destDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
         // Delete old APK files to avoid confusion
         destDir?.listFiles()?.filter { it.name.endsWith(".apk") }?.forEach { it.delete() }
 
         val request = DownloadManager.Request(Uri.parse(downloadUrl))
-            .setTitle("GymBuddy $versionName")
+            .setTitle("StayStrong $versionName")
             .setDescription("Downloading update…")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, fileName)

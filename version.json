@@ -1,7 +1,7 @@
 {
-  "versionCode": 3,
+  "versionCode": 4,
   "versionName": "1.1.0",
   "releaseNotes": "• 130+ new exercises added\n• Color theme picker (7 accent colors)\n• Tap any past workout to see full exercise detail\n• Save any history workout as a routine\n• Save as routine after finishing a workout\n• In-app update checker",
-  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.1.0/gymbuddy-1.1.0.apk",
+  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.1.0/staystrong-1.1.0.apk",
   "mandatory": false
 }
