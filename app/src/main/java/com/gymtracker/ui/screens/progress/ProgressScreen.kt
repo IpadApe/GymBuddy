@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -43,6 +45,8 @@ import java.util.*
 
 data class DailyVolumePoint(val label: String, val volumeKg: Double)
 
+data class SessionExerciseItem(val exerciseName: String, val sets: List<WorkoutSetEntity>)
+
 data class ProgressState(
     val sessions: List<WorkoutSessionEntity> = emptyList(),
     val monthlyVolume: Double = 0.0,
@@ -58,7 +62,11 @@ data class ProgressState(
     val selectedYear: Int = Calendar.getInstance().get(Calendar.YEAR),
     val useMetric: Boolean = true,
     val showMeasurementDialog: Boolean = false,
-    val dailyVolume: List<DailyVolumePoint> = emptyList()
+    val dailyVolume: List<DailyVolumePoint> = emptyList(),
+    val selectedSession: WorkoutSessionEntity? = null,
+    val selectedSessionExercises: List<SessionExerciseItem> = emptyList(),
+    val isLoadingDetail: Boolean = false,
+    val savedFromHistoryConfirm: Boolean = false
 )
 
 class ProgressViewModel(private val app: GymTrackerApp) : ViewModel() {
@@ -159,6 +167,33 @@ class ProgressViewModel(private val app: GymTrackerApp) : ViewModel() {
 
     fun showMeasurementDialog() { _state.update { it.copy(showMeasurementDialog = true) } }
     fun hideMeasurementDialog() { _state.update { it.copy(showMeasurementDialog = false) } }
+
+    fun openSessionDetail(session: WorkoutSessionEntity) {
+        _state.update { it.copy(selectedSession = session, isLoadingDetail = true, savedFromHistoryConfirm = false) }
+        viewModelScope.launch {
+            val wxsList = repo.getExercisesWithSets(session.id).first()
+            val items = wxsList.sortedBy { it.workoutExercise.orderIndex }.map { wxs ->
+                val exercise = repo.getExerciseById(wxs.workoutExercise.exerciseId)
+                SessionExerciseItem(
+                    exerciseName = exercise?.name ?: "Unknown Exercise",
+                    sets = wxs.sets.filter { it.isCompleted }.sortedBy { it.setNumber }
+                )
+            }.filter { it.sets.isNotEmpty() }
+            _state.update { it.copy(selectedSessionExercises = items, isLoadingDetail = false) }
+        }
+    }
+
+    fun closeSessionDetail() {
+        _state.update { it.copy(selectedSession = null, selectedSessionExercises = emptyList(), savedFromHistoryConfirm = false) }
+    }
+
+    fun saveSessionAsRoutine(name: String) {
+        val session = _state.value.selectedSession ?: return
+        viewModelScope.launch {
+            repo.saveWorkoutAsRoutine(session.id, name)
+            _state.update { it.copy(savedFromHistoryConfirm = true) }
+        }
+    }
 
     fun saveMeasurement(bodyWeight: Double?, bodyFat: Double?, chest: Double?, waist: Double?,
                         leftArm: Double?, rightArm: Double?) {
@@ -437,14 +472,24 @@ fun ProgressScreen(
 
         // Workout History
         item { SectionHeader(title = "Workout History") }
-        items(state.sessions.take(10)) { session ->
+        val completedSessions = state.sessions.filter { it.endTime != null }
+        if (completedSessions.isEmpty()) {
+            item {
+                EmptyState(
+                    icon = Icons.Filled.FitnessCenter,
+                    title = "No workouts yet",
+                    subtitle = "Complete a workout to see your history here"
+                )
+            }
+        }
+        items(completedSessions.take(20)) { session ->
             WorkoutSessionCard(
                 name = session.name,
                 date = FormatUtils.formatDate(session.startTime),
                 duration = FormatUtils.formatDuration(session.durationSeconds),
                 volume = FormatUtils.formatVolume(session.totalVolumeKg, state.useMetric),
                 splitType = session.splitType,
-                onClick = {}
+                onClick = { viewModel.openSessionDetail(session) }
             )
         }
 
@@ -457,6 +502,20 @@ fun ProgressScreen(
             useMetric = state.useMetric,
             onSave = { bw, bf, c, w, la, ra -> viewModel.saveMeasurement(bw, bf, c, w, la, ra) },
             onDismiss = { viewModel.hideMeasurementDialog() }
+        )
+    }
+
+    // Workout History Detail Sheet
+    val selectedSession = state.selectedSession
+    if (selectedSession != null) {
+        WorkoutHistoryDetailSheet(
+            session = selectedSession,
+            exercises = state.selectedSessionExercises,
+            isLoading = state.isLoadingDetail,
+            savedConfirm = state.savedFromHistoryConfirm,
+            useMetric = state.useMetric,
+            onSaveAsRoutine = { name -> viewModel.saveSessionAsRoutine(name) },
+            onDismiss = { viewModel.closeSessionDetail() }
         )
     }
 }
@@ -602,4 +661,272 @@ fun MeasurementDialog(
             TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WORKOUT HISTORY DETAIL SHEET
+// ═══════════════════════════════════════════════════════════════
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WorkoutHistoryDetailSheet(
+    session: WorkoutSessionEntity,
+    exercises: List<SessionExerciseItem>,
+    isLoading: Boolean,
+    savedConfirm: Boolean,
+    useMetric: Boolean,
+    onSaveAsRoutine: (name: String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var showSaveDialog by remember { mutableStateOf(false) }
+
+    if (showSaveDialog) {
+        var routineName by remember { mutableStateOf(session.name) }
+        AlertDialog(
+            onDismissRequest = { showSaveDialog = false },
+            title = { Text("Save as Routine", fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = routineName,
+                    onValueChange = { routineName = it },
+                    label = { Text("Routine name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(8.dp)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onSaveAsRoutine(routineName)
+                        showSaveDialog = false
+                    },
+                    enabled = routineName.isNotBlank()
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSaveDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        session.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        FormatUtils.formatDateTime(session.startTime),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Filled.Close, "Close")
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Stats row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                if (session.durationSeconds > 0) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier
+                            .background(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Filled.Timer, null, modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary)
+                        Text(FormatUtils.formatDuration(session.durationSeconds),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                if (session.totalVolumeKg > 0) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier
+                            .background(
+                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Filled.FitnessCenter, null, modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.secondary)
+                        Text(FormatUtils.formatVolume(session.totalVolumeKg, useMetric),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.secondary)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(12.dp))
+
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                }
+            } else if (exercises.isEmpty()) {
+                Text(
+                    "No exercises recorded for this session.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+            } else {
+                // Exercise list — scrollable
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    exercises.forEach { item ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    item.exerciseName,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Spacer(Modifier.height(6.dp))
+
+                                // Column headers
+                                Row(modifier = Modifier.fillMaxWidth()) {
+                                    Text("SET", style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.width(32.dp))
+                                    Text("WEIGHT", style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f))
+                                    Text("REPS", style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.width(48.dp), textAlign = TextAlign.End)
+                                }
+                                Spacer(Modifier.height(4.dp))
+
+                                item.sets.forEachIndexed { idx, set ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            "${idx + 1}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.width(32.dp)
+                                        )
+                                        val weightText = if (set.weight > 0) {
+                                            val w = if (set.weight == set.weight.toLong().toDouble())
+                                                set.weight.toLong().toString()
+                                            else "%.1f".format(set.weight)
+                                            "$w kg"
+                                        } else "—"
+                                        Text(
+                                            weightText,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        val repsText = if (set.reps > 0) "${set.reps} reps" else "—"
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.End,
+                                            modifier = Modifier.width(48.dp)
+                                        ) {
+                                            if (set.isPersonalRecord) {
+                                                Text(
+                                                    "PR",
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier
+                                                        .background(
+                                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                                            RoundedCornerShape(3.dp)
+                                                        )
+                                                        .padding(horizontal = 3.dp, vertical = 1.dp)
+                                                )
+                                                Spacer(Modifier.width(4.dp))
+                                            }
+                                            Text(repsText, style = MaterialTheme.typography.bodySmall)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            // Save as Routine button / confirmation
+            if (savedConfirm) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1B5E20).copy(alpha = 0.25f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
+                        Text("Saved to Routines!", style = MaterialTheme.typography.bodyMedium,
+                            color = Color(0xFF4CAF50), fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            } else {
+                OutlinedButton(
+                    onClick = { showSaveDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Filled.BookmarkAdd, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Save as Routine")
+                }
+            }
+        }
+    }
 }

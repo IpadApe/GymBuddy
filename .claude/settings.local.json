@@ -21,7 +21,8 @@
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); devices=d.get\\(''''devices'''',[]\\); [print\\(x.get\\(''''productName'''',''''?''''\\), x.get\\(''''code'''',''''?''''\\), x.get\\(''''deviceSource'''',''''?''''\\)\\) for x in devices if ''''rex'''' in x.get\\(''''productName'''',''''''''\\).lower\\(\\) or ''''rex'''' in x.get\\(''''code'''',''''''''\\).lower\\(\\)]\")",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''country:'''', d.get\\(''''countryCode'''',''''?''''\\)\\); print\\(''''email/id:'''', d.get\\(''''email'''', d.get\\(''''userId'''', d.get\\(''''accountId'''', ''''?''''\\)\\)\\)\\)\")",
       "Bash(./gradlew :app:compileDebugKotlin)",
-      "Bash(./gradlew :app:compileDebugKotlin :app:mergeDebugResources)"
+      "Bash(./gradlew :app:compileDebugKotlin :app:mergeDebugResources)",
+      "WebFetch(domain:fitnessprogramer.com)"
     ]
   }
 }

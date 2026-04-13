@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -30,6 +31,7 @@ import com.gymtracker.GymTrackerApp
 import com.gymtracker.data.database.entities.WorkoutSessionEntity
 import com.gymtracker.ui.components.*
 import com.gymtracker.ui.theme.*
+import com.gymtracker.util.AppInstaller
 import com.gymtracker.util.FormatUtils
 import java.text.SimpleDateFormat
 import java.util.*
@@ -46,6 +48,7 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val activeWorkoutSessionId by GymTrackerApp.instance.activeWorkoutSessionId.collectAsState()
+    val context = LocalContext.current
 
     val greeting = remember {
         val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -114,6 +117,23 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
+        }
+
+        // ── UPDATE BANNER ─────────────────────────────────────────
+        val update = uiState.availableUpdate
+        if (update != null && !uiState.updateDismissed) {
+            item {
+                Spacer(Modifier.height(4.dp))
+                UpdateBanner(
+                    versionName = update.versionName,
+                    releaseNotes = update.releaseNotes,
+                    mandatory = update.mandatory,
+                    onUpdate = {
+                        AppInstaller.downloadAndInstall(context, update.downloadUrl, update.versionName)
+                    },
+                    onDismiss = { viewModel.dismissUpdate() }
+                )
             }
         }
 
@@ -600,6 +620,121 @@ fun QuickActionCard(
             }
             Spacer(Modifier.height(8.dp))
             Text(label, style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UPDATE BANNER
+// ═══════════════════════════════════════════════════════════════
+
+@Composable
+fun UpdateBanner(
+    versionName: String,
+    releaseNotes: String,
+    mandatory: Boolean,
+    onUpdate: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        Color(0xFF1565C0).copy(alpha = 0.20f),
+                        Color(0xFF0D47A1).copy(alpha = 0.12f)
+                    )
+                )
+            )
+            .border(1.dp, Color(0xFF1976D2).copy(alpha = 0.45f), RoundedCornerShape(16.dp))
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF1976D2).copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Filled.SystemUpdate,
+                        contentDescription = null,
+                        tint = Color(0xFF42A5F5),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "Update available — v$versionName",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF90CAF9)
+                    )
+                    Text(
+                        if (mandatory) "Required update" else "Tap to update the app",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (!mandatory) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = "Dismiss",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            }
+
+            if (releaseNotes.isNotBlank()) {
+                Spacer(Modifier.height(8.dp))
+                TextButton(
+                    onClick = { expanded = !expanded },
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier.height(24.dp)
+                ) {
+                    Text(
+                        if (expanded) "Hide what's new ▲" else "What's new ▼",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF64B5F6)
+                    )
+                }
+                AnimatedVisibility(visible = expanded) {
+                    Text(
+                        releaseNotes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            Button(
+                onClick = onUpdate,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF1976D2)
+                ),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(Icons.Filled.Download, null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("Download & Install", style = MaterialTheme.typography.labelLarge)
+            }
         }
     }
 }

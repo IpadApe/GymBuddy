@@ -10,26 +10,40 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.gymtracker.BuildConfig
 import com.gymtracker.GymTrackerApp
 import com.gymtracker.data.database.entities.UserPreferencesEntity
 import com.gymtracker.ui.components.GradientButton
 import com.gymtracker.ui.components.NumberInputField
 import com.gymtracker.ui.components.SectionHeader
 import com.gymtracker.ui.theme.*
+import com.gymtracker.util.AppInstaller
 import com.gymtracker.util.FormatUtils
+import com.gymtracker.util.UpdateChecker
+import com.gymtracker.util.UpdateInfo
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+
+enum class UpdateCheckState { IDLE, CHECKING, UP_TO_DATE, UPDATE_AVAILABLE, ERROR }
 
 class SettingsViewModel(private val app: GymTrackerApp) : ViewModel() {
     private val repo = app.repository
     val prefs = repo.getPreferences()
+
+    private val _updateCheckState = MutableStateFlow(UpdateCheckState.IDLE)
+    val updateCheckState: StateFlow<UpdateCheckState> = _updateCheckState.asStateFlow()
+
+    private val _availableUpdate = MutableStateFlow<UpdateInfo?>(null)
+    val availableUpdate: StateFlow<UpdateInfo?> = _availableUpdate.asStateFlow()
 
     fun updatePrefs(transform: (UserPreferencesEntity) -> UserPreferencesEntity) {
         viewModelScope.launch {
@@ -42,6 +56,19 @@ class SettingsViewModel(private val app: GymTrackerApp) : ViewModel() {
         viewModelScope.launch {
             val data = repo.exportAllData()
             // In production, serialize to JSON and write to file
+        }
+    }
+
+    fun checkForUpdate() {
+        viewModelScope.launch {
+            _updateCheckState.value = UpdateCheckState.CHECKING
+            val info = UpdateChecker.checkForUpdate(BuildConfig.VERSION_CODE)
+            if (info != null) {
+                _availableUpdate.value = info
+                _updateCheckState.value = UpdateCheckState.UPDATE_AVAILABLE
+            } else {
+                _updateCheckState.value = UpdateCheckState.UP_TO_DATE
+            }
         }
     }
 }

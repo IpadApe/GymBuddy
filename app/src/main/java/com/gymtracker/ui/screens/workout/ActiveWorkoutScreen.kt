@@ -295,11 +295,26 @@ class ActiveWorkoutViewModel(
         }
     }
 
+    fun uncompleteSet(set: WorkoutSetEntity) {
+        viewModelScope.launch {
+            repo.updateSet(set.copy(isCompleted = false, completedAt = null, isPersonalRecord = false))
+        }
+    }
+
     fun addExercise(exerciseId: Long) {
         recordInteraction()
         viewModelScope.launch {
             val workoutExId = repo.addExerciseToWorkout(sessionId, exerciseId, exercises.value.size)
-            repo.addSet(workoutExId, 1)
+            val newSetId = repo.addSet(workoutExId, 1)
+            // Pre-fill from the most recent completed set for this exercise in any previous session
+            val lastSet = repo.getSetHistory(exerciseId).first().firstOrNull { it.isCompleted }
+            if (lastSet != null && (lastSet.weight > 0 || lastSet.reps > 0)) {
+                _setEditStates.value = _setEditStates.value + (newSetId to SetEditState(
+                    weightText = formatWeightInput(lastSet.weight),
+                    repsText = if (lastSet.reps > 0) lastSet.reps.toString() else "",
+                    isPrefilled = true
+                ))
+            }
         }
     }
 
@@ -404,6 +419,13 @@ class ActiveWorkoutViewModel(
     // Frozen snapshot of elapsed time set the moment the workout is finished
     private val _finalElapsedSeconds = MutableStateFlow(0)
     val finalElapsedSeconds = _finalElapsedSeconds.asStateFlow()
+
+    fun saveWorkoutAsRoutine(name: String, onSaved: (Long) -> Unit) {
+        viewModelScope.launch {
+            val id = repo.saveWorkoutAsRoutine(sessionId, name)
+            if (id > 0) onSaved(id)
+        }
+    }
 
     fun finishAndLoadStats() {
         _finalElapsedSeconds.value = _elapsedSeconds.value
@@ -564,6 +586,7 @@ fun ActiveWorkoutScreen(
                             viewModel.completeSet(set, ex.workoutExercise.restTimeSeconds)
                         },
                         onDeleteSet = { set -> viewModel.deleteSet(set) },
+                        onUncompleteSet = { set -> viewModel.uncompleteSet(set) },
                         onAddSet = { viewModel.addSet(ex.workoutExercise.id, ex.exercise.id, ex.sets) },
                         onRemoveExercise = { viewModel.removeExercise(ex.workoutExercise) },
                         onChangeRestTime = { seconds -> viewModel.changeRestTime(ex.workoutExercise, seconds) },
@@ -719,6 +742,7 @@ fun ActiveWorkoutScreen(
             elapsedSeconds = finalElapsedSeconds,
             workoutCount = workoutCount,
             streak = streak,
+            onSaveAsRoutine = { name -> viewModel.saveWorkoutAsRoutine(name) {} },
             onClose = onFinish
         )
     }
@@ -746,6 +770,7 @@ fun ExerciseSessionCard(
     onChangeSetType: (WorkoutSetEntity) -> Unit,
     onCompleteSet: (WorkoutSetEntity) -> Unit,
     onDeleteSet: (WorkoutSetEntity) -> Unit,
+    onUncompleteSet: (WorkoutSetEntity) -> Unit = {},
     onAddSet: () -> Unit,
     onRemoveExercise: () -> Unit,
     onChangeRestTime: (Int) -> Unit = {},
@@ -1006,7 +1031,7 @@ fun ExerciseSessionCard(
                                 rpeExpandedForSetId = if (rpeExpandedForSetId == set.id) null else set.id
                             },
                             onChangeSetType = { onChangeSetType(set) },
-                            onComplete = { onCompleteSet(set) },
+                            onComplete = { if (set.isCompleted) onUncompleteSet(set) else onCompleteSet(set) },
                             onDelete = { onDeleteSet(set) }
                         )
                     }
@@ -1406,7 +1431,7 @@ fun SetRow(
                             color = weightBorderColor,
                             shape = RoundedCornerShape(8.dp)
                         ),
-                    enabled = !set.isCompleted,
+                    enabled = true,
                     textStyle = fieldTextStyle.copy(color = weightTextColor),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     interactionSource = weightSource,
@@ -1459,7 +1484,7 @@ fun SetRow(
                             color = repsBorderColor,
                             shape = RoundedCornerShape(8.dp)
                         ),
-                    enabled = !set.isCompleted,
+                    enabled = true,
                     textStyle = fieldTextStyle.copy(color = repsTextColor),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     interactionSource = repsSource,
@@ -1485,29 +1510,27 @@ fun SetRow(
             }
 
             // ── RPE mini-button ───────────────────────────────
-            if (!set.isCompleted) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(
-                            if (editState.rpe != null) MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
-                            else Color.Transparent
-                        )
-                        .clickable(onClick = onToggleRpe),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = editState.rpe?.let {
-                            if (it == it.toInt().toFloat()) it.toInt().toString()
-                            else "%.0f".format(it)
-                        } ?: "RPE",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = if (editState.rpe != null) MaterialTheme.colorScheme.secondary
-                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        fontWeight = FontWeight.Bold
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(
+                        if (editState.rpe != null) MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f)
+                        else Color.Transparent
                     )
-                }
+                    .clickable(onClick = onToggleRpe),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = editState.rpe?.let {
+                        if (it == it.toInt().toFloat()) it.toInt().toString()
+                        else "%.0f".format(it)
+                    } ?: "RPE",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = if (editState.rpe != null) MaterialTheme.colorScheme.secondary
+                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             // ── Check / Completed button ──────────────────────
@@ -1519,12 +1542,12 @@ fun SetRow(
                         if (set.isCompleted) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
                     )
-                    .clickable(enabled = !set.isCompleted, onClick = onComplete),
+                    .clickable(onClick = onComplete),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    Icons.Filled.Check,
-                    contentDescription = if (set.isCompleted) "Done" else "Complete",
+                    if (set.isCompleted) Icons.Filled.Check else Icons.Filled.Check,
+                    contentDescription = if (set.isCompleted) "Tap to edit" else "Complete set",
                     tint = if (set.isCompleted) Color.White else MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(22.dp)
                 )
@@ -1595,11 +1618,45 @@ fun WorkoutCompleteScreen(
     elapsedSeconds: Int,
     workoutCount: Int,
     streak: Int,
+    onSaveAsRoutine: (name: String) -> Unit = {},
     onClose: () -> Unit
 ) {
     val completedExercises = exercises.filter { it.sets.any { s -> s.isCompleted } }
     val totalVolume = completedExercises.sumOf { ex -> ex.sets.filter { it.isCompleted }.sumOf { it.weight * it.reps } }
     val totalPRs = completedExercises.sumOf { ex -> ex.sets.count { it.isCompleted && it.isPersonalRecord } }
+    var showSaveRoutineDialog by remember { mutableStateOf(false) }
+    var savedRoutineConfirm by remember { mutableStateOf(false) }
+
+    if (showSaveRoutineDialog) {
+        var routineName by remember { mutableStateOf(session?.name ?: "My Workout") }
+        AlertDialog(
+            onDismissRequest = { showSaveRoutineDialog = false },
+            title = { Text("Save as Routine", fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = routineName,
+                    onValueChange = { routineName = it },
+                    label = { Text("Routine name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(8.dp)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onSaveAsRoutine(routineName)
+                        showSaveRoutineDialog = false
+                        savedRoutineConfirm = true
+                    },
+                    enabled = routineName.isNotBlank()
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSaveRoutineDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -1786,7 +1843,36 @@ fun WorkoutCompleteScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(16.dp))
+
+            if (savedRoutineConfirm) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1B5E20).copy(alpha = 0.3f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(18.dp))
+                        Text("Saved to Routines!", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF4CAF50), fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            } else {
+                OutlinedButton(
+                    onClick = { showSaveRoutineDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Filled.BookmarkAdd, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Save as Routine")
+                }
+            }
+
+            Spacer(Modifier.height(80.dp))
         }
 
         // Close button

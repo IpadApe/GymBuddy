@@ -485,6 +485,46 @@ class GymRepository(private val db: AppDatabase) {
     }
 
     // ═══════════════════ SEED DATA ═══════════════════
+    suspend fun saveWorkoutAsRoutine(sessionId: Long, routineName: String): Long {
+        val session = db.workoutSessionDao().getSessionById(sessionId) ?: return -1L
+        val routineId = db.routineDao().insertRoutine(
+            RoutineEntity(
+                name = routineName,
+                description = "Saved from workout on ${java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()).format(java.util.Date(session.startTime))}",
+                goal = "Custom",
+                daysPerWeek = 1,
+                isPrebuilt = false
+            )
+        )
+        val dayId = db.routineDayDao().insertDay(
+            RoutineDayEntity(
+                routineId = routineId,
+                dayName = session.name.takeIf { it.isNotBlank() } ?: "Day 1",
+                splitType = session.splitType,
+                dayOrder = 0
+            )
+        )
+        val exercises = db.workoutExerciseDao().getExercisesForSession(sessionId).first()
+        exercises.sortedBy { it.orderIndex }.forEachIndexed { index, we ->
+            val completedSets = db.workoutSetDao().getSetsForExercise(we.id).first()
+                .filter { it.isCompleted }
+            val targetSets = completedSets.size.coerceAtLeast(3)
+            val targetReps = completedSets.mapNotNull { if (it.reps > 0) it.reps else null }.average()
+                .takeIf { !it.isNaN() }?.toInt() ?: 10
+            db.routineDayExerciseDao().insertExercise(
+                RoutineDayExerciseEntity(
+                    routineDayId = dayId,
+                    exerciseId = we.exerciseId,
+                    orderIndex = index,
+                    targetSets = targetSets,
+                    targetReps = targetReps.toString(),
+                    restTimeSeconds = we.restTimeSeconds
+                )
+            )
+        }
+        return routineId
+    }
+
     suspend fun createExercise(exercise: com.gymtracker.data.database.entities.ExerciseEntity): Long {
         return db.exerciseDao().insertExercise(exercise)
     }
@@ -499,10 +539,183 @@ class GymRepository(private val db: AppDatabase) {
     /** Inserts exercises added in later versions that existing users don't have yet. */
     suspend fun ensureNewExercises() {
         val newNames = listOf(
+            // Tricep additions
             "Straight Bar Tricep Pushdown",
             "V-Bar Tricep Pushdown",
             "Triangle Bar Tricep Pushdown",
-            "Reverse Grip Bench Press"
+            "Reverse Grip Bench Press",
+            // Back / Core additions
+            "Back Extension",
+            "Romanian Deadlift",
+            "Good Morning",
+            "Side Bend",
+            "Wood Chop",
+            "Reverse Crunch",
+            // Chest press variations (from CSV)
+            "Wide Grip Bench Press",
+            "Neutral Grip Dumbbell Press",
+            "Single Arm Dumbbell Press",
+            "Alternating Dumbbell Press",
+            "Paused Bench Press",
+            "Incline Machine Press",
+            "Resistance Band Chest Press",
+            "Kettlebell Floor Press",
+            // Chest fly variations (from CSV)
+            "Decline Dumbbell Fly",
+            "Incline Cable Fly",
+            "Resistance Band Chest Fly",
+            "Standing Cable Fly",
+            // Push-up variations (from CSV)
+            "Incline Push-Ups",
+            "Decline Push-Ups",
+            "Wide Push-Ups",
+            "Explosive Push-Ups",
+            "Clap Push-Ups",
+            "Deficit Push-Ups",
+            "Weighted Push-Ups",
+            "Archer Push-Ups",
+            // Chest dip variations (from CSV)
+            "Weighted Chest Dips",
+            "Assisted Chest Dips",
+            // ── fitnessprogramer.com — CHEST ──
+            "Dumbbell Pullover",
+            "Barbell Pullover",
+            "Lying Cable Pullover",
+            "Machine Fly",
+            "Smith Machine Incline Bench Press",
+            "Smith Machine Decline Bench Press",
+            "Lever Chest Press",
+            "High Cable Crossover",
+            "Cable Upper Chest Crossover",
+            "One-Arm Cable Chest Press",
+            "Single-Arm Cable Crossover",
+            "Drop Push-Up",
+            "Kneeling Push-Up",
+            "Parallel Bar Dips",
+            "Dips Between Chairs",
+            "Arm Scissors",
+            // ── fitnessprogramer.com — BACK ──
+            "Weighted Pull-Up",
+            "Muscle-Up",
+            "Band Assisted Muscle-Up",
+            "Reverse Lat Pulldown",
+            "V-Bar Lat Pulldown",
+            "Cable One Arm Lat Pulldown",
+            "Rope Straight Arm Pulldown",
+            "Reverse Grip Barbell Row",
+            "One-Arm Barbell Row",
+            "Incline Barbell Row",
+            "Smith Machine Bent Over Row",
+            "Cable Bent Over Row",
+            "One Arm Cable Row",
+            "Close Grip Cable Row",
+            "Kneeling High Pulley Row",
+            "Shotgun Row",
+            "Ring Inverted Row",
+            "Table Inverted Row",
+            "One Arm Landmine Row",
+            "Lever T-Bar Row",
+            // ── fitnessprogramer.com — SHOULDERS ──
+            "Handstand Push-Up",
+            "Scott Press",
+            "Dumbbell Scaption",
+            "Lateral Raise Machine",
+            "Seated Dumbbell Lateral Raise",
+            "Leaning Cable Lateral Raise",
+            "Incline Dumbbell Reverse Fly",
+            "Incline Dumbbell Y-Raise",
+            "Dumbbell Incline T-Raise",
+            "Two Arm Dumbbell Front Raise",
+            "Cable Front Raise",
+            "Weight Plate Front Raise",
+            "Dumbbell Cuban Press",
+            "Band Pull-Apart",
+            "Dumbbell W Press",
+            "Seated Behind Neck Press",
+            "Push Press",
+            "Landmine Squat to Press",
+            // ── fitnessprogramer.com — BICEPS ──
+            "Zottman Curl",
+            "Waiter Curl",
+            "Lying High Bench Barbell Curl",
+            "Cable Incline Biceps Curl",
+            "Overhead Cable Curl",
+            "Lying Cable Curl",
+            "Dumbbell Reverse Curl",
+            "Close Grip EZ Bar Curl",
+            "Lever Biceps Curl",
+            "Biceps Curl Machine",
+            // ── fitnessprogramer.com — TRICEPS ──
+            "Rope Pushdown",
+            "Reverse Grip Pushdown",
+            "Dumbbell Skull Crusher",
+            "Seated Dumbbell Triceps Extension",
+            "Seated One-Arm Dumbbell Triceps Extension",
+            "Kneeling Cable Triceps Extension",
+            "Cable Lying Triceps Extension",
+            "High Pulley Overhead Triceps Extension",
+            "Cable Side Triceps Extension",
+            "Seated EZ-Bar Overhead Triceps Extension",
+            "Cross Arm Push-Up",
+            // ── fitnessprogramer.com — LEGS ──
+            "Barbell Lunge",
+            "Side Lunge",
+            "Curtsy Lunge",
+            "Barbell Bulgarian Split Squat",
+            "Barbell Hack Squat",
+            "Bodyweight Squat",
+            "Bodyweight Sumo Squat",
+            "Cossack Squat",
+            "Jump Squats",
+            "Dumbbell Cossack Squat",
+            "Heel-Elevated Goblet Squat",
+            "Pendulum Lunge",
+            "Barbell Lateral Lunge",
+            "Dumbbell Rear Lunge",
+            "Static Lunge",
+            "Lever Hip Abduction",
+            "Cable Hip Adduction",
+            // ── fitnessprogramer.com — CALVES ──
+            "Standing Barbell Calf Raise",
+            "Barbell Seated Calf Raise",
+            "Weighted Seated Calf Raise",
+            "Squat Hold Calf Raise",
+            "Partner Donkey Calf Raise",
+            // ── fitnessprogramer.com — CORE ──
+            "Weighted Crunch",
+            "Kneeling Cable Crunch",
+            "T-Cross Sit-Up",
+            "Tuck Crunch",
+            "Ab Roller Crunch",
+            "Toes to Bar",
+            "Captain's Chair Leg Raise",
+            "Alternate Leg Raises",
+            "Lying Scissor Kicks",
+            "Dead Bug",
+            "L-Sit",
+            "Heel Touch",
+            "Cable Side Bend",
+            "Barbell Side Bend",
+            "Seated Oblique Twist",
+            "Front to Side Plank",
+            "Stability Ball Knee Tuck",
+            "Dumbbell V-Up",
+            "Kettlebell Windmill",
+            "Standing Cable Twist",
+            // ── fitnessprogramer.com — FOREARMS ──
+            "Barbell Reverse Curl",
+            "Dumbbell Finger Curl",
+            "Barbell Finger Curl",
+            "Wrist Roller",
+            "Behind The Back Wrist Curl",
+            "Barbell Reverse Wrist Curl",
+            "Hammer Curl with Band",
+            // ── fitnessprogramer.com — TRAPS ──
+            "Cable Shrug",
+            "Smith Machine Shrug",
+            "Lever Shrug",
+            "Barbell Rear Delt Raise",
+            "Bent Over Reverse Cable Fly"
         )
         newNames.forEach { name ->
             if (db.exerciseDao().getExerciseByName(name) == null) {

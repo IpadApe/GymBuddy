@@ -46,25 +46,20 @@ class RoutineDetailViewModel(private val app: GymTrackerApp, private val routine
         viewModelScope.launch {
             repo.getDaysForRoutine(routineId).collect { days ->
                 _state.update { it.copy(days = days) }
+                // Load exercises for all days — use .first() so the loop isn't blocked by each day's flow
+                val dayExMap = mutableMapOf<Long, List<RoutineDayExerciseEntity>>()
+                val nameMap = _state.value.exerciseNames.toMutableMap()
                 days.forEach { day ->
-                    repo.getExercisesForRoutineDay(day.id).collect { exercises ->
-                        _state.update { s ->
-                            val newMap = s.dayExercises.toMutableMap()
-                            newMap[day.id] = exercises
-                            s.copy(dayExercises = newMap)
-                        }
-                        exercises.forEach { rde ->
+                    val exercises = repo.getExercisesForRoutineDay(day.id).first()
+                    dayExMap[day.id] = exercises
+                    exercises.forEach { rde ->
+                        if (!nameMap.containsKey(rde.exerciseId)) {
                             val ex = repo.getExerciseById(rde.exerciseId)
-                            if (ex != null) {
-                                _state.update { s ->
-                                    val newNames = s.exerciseNames.toMutableMap()
-                                    newNames[rde.exerciseId] = ex.name
-                                    s.copy(exerciseNames = newNames)
-                                }
-                            }
+                            if (ex != null) nameMap[rde.exerciseId] = ex.name
                         }
                     }
                 }
+                _state.update { it.copy(dayExercises = dayExMap, exerciseNames = nameMap) }
             }
         }
     }

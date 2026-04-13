@@ -1,10 +1,13 @@
 package com.gymtracker.ui.screens.home
 
 import androidx.lifecycle.*
+import com.gymtracker.BuildConfig
 import com.gymtracker.GymTrackerApp
 import com.gymtracker.data.database.entities.WorkoutSessionEntity
 import com.gymtracker.data.model.MuscleGroup
 import com.gymtracker.util.FormatUtils
+import com.gymtracker.util.UpdateChecker
+import com.gymtracker.util.UpdateInfo
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -15,7 +18,9 @@ data class HomeUiState(
     val avgDuration: Int = 0,
     val useMetric: Boolean = true,
     val recommendedMuscles: List<MuscleGroup> = emptyList(),
-    val deloadRecommended: Boolean = false
+    val deloadRecommended: Boolean = false,
+    val availableUpdate: UpdateInfo? = null,
+    val updateDismissed: Boolean = false
 )
 
 class HomeViewModel(private val app: GymTrackerApp) : ViewModel() {
@@ -25,6 +30,18 @@ class HomeViewModel(private val app: GymTrackerApp) : ViewModel() {
 
     init {
         loadData()
+        checkForUpdate()
+    }
+
+    fun dismissUpdate() {
+        _uiState.update { it.copy(updateDismissed = true) }
+    }
+
+    private fun checkForUpdate() {
+        viewModelScope.launch {
+            val info = UpdateChecker.checkForUpdate(BuildConfig.VERSION_CODE)
+            if (info != null) _uiState.update { it.copy(availableUpdate = info) }
+        }
     }
 
     private fun loadData() {
