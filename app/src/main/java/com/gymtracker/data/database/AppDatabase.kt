@@ -2,8 +2,16 @@ package com.gymtracker.data.database
 
 import android.content.Context
 import androidx.room.*
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.gymtracker.data.database.dao.*
 import com.gymtracker.data.database.entities.*
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE user_preferences ADD COLUMN colorTheme TEXT NOT NULL DEFAULT 'ORANGE'")
+    }
+}
 
 @Database(
     entities = [
@@ -19,7 +27,7 @@ import com.gymtracker.data.database.entities.*
         MuscleVolumeLogEntity::class,
         UserPreferencesEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -47,6 +55,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "gym_tracker.db"
                 )
+                    .addMigrations(MIGRATION_3_4)
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance

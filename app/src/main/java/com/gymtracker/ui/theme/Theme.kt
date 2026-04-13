@@ -9,84 +9,151 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
 // ═══════════════════════════════════════════════════════════════
-// COLOR PALETTE
-// Psychology: Deep dark = authority/focus  |  Orange = energy/motivation
-// Blue-teal  = trust/performance  |  Green = achievement/progress
+// SHARED BACKGROUNDS (same across all themes)
 // ═══════════════════════════════════════════════════════════════
 
-// Primary — Electric Orange (energy, motivation, action — #1 choice for fitness)
-val OrangePrimary    = Color(0xFFFF6B35)
-val OrangeDark       = Color(0xFFD95A28)
-val OrangeLight      = Color(0xFFFF8E5E)
-val OrangeContainer  = Color(0xFF3D1A0A)
+val BgDeep           = Color(0xFF0C0C16)
+val SurfaceDark      = Color(0xFF131320)
+val SurfaceVariantDk = Color(0xFF1A1A2C)
+val CardDark         = Color(0xFF1F1F32)
+val OutlineDark      = Color(0xFF2A2A40)
+val OutlineLight     = Color(0xFFDDDDE8)
 
-// Dark backgrounds — deep navy-black (authority, focus, high-performance feel)
-val BgDeep           = Color(0xFF0C0C16)   // main background
-val SurfaceDark      = Color(0xFF131320)   // cards/surfaces
-val SurfaceVariantDk = Color(0xFF1A1A2C)   // elevated surfaces
-val CardDark         = Color(0xFF1F1F32)   // cards
-
-// Accent — cool sky-blue (trust, data, stability)
-val BlueTrust        = Color(0xFF4FC3F7)
-val BlueTrustDark    = Color(0xFF0288D1)
-
-// Tertiary — teal-green (achievement, success, wellness)
-val TealSuccess      = Color(0xFF26C6A6)
-val TealSuccessDark  = Color(0xFF00897B)
-
-// Semantic
-val SuccessGreen     = Color(0xFF26C6A6)
-val WarningOrange    = Color(0xFFFFB300)
-val ErrorRed         = Color(0xFFFF4757)
-
-// Text
-val TextPrimary      = Color(0xFFF0F0F8)
-val TextSecondary    = Color(0xFFAAABC0)
-val TextTertiary     = Color(0xFF666680)
-
-// Light theme
 val LightBackground  = Color(0xFFF5F5FA)
 val LightSurface     = Color(0xFFFFFFFF)
 val LightCard        = Color(0xFFEEEEF5)
 
-// Muscle map — orange accent palette for dark theme
-val MuscleUndertrained  = Color(0xFF3A3A50)
-val MuscleAdequate      = Color(0xFF26C6A6)   // teal-green — on track
-val MuscleOvertrained   = Color(0xFFFF4757)   // red — too much
-val MuscleRecovering    = Color(0xFFFFB300)   // amber — in recovery
+val TextPrimary      = Color(0xFFF0F0F8)
+val TextSecondary    = Color(0xFFAAABC0)
 
-// Accent — periwinkle (replaces NeonPurple)
+val SuccessGreen     = Color(0xFF26C6A6)
+val WarningOrange    = Color(0xFFFFB300)
+val ErrorRed         = Color(0xFFFF4757)
+
+// Muscle map — same across all themes
+val MuscleUndertrained  = Color(0xFF3A3A50)
+val MuscleAdequate      = Color(0xFF26C6A6)
+val MuscleOvertrained   = Color(0xFFFF4757)
+val MuscleRecovering    = Color(0xFFFFB300)
+
+// Legacy names kept so existing screens don't break
+val OrangePrimary    = Color(0xFFFF6B35)
+val OrangeDark       = Color(0xFFD95A28)
+val OrangeLight      = Color(0xFFFF8E5E)
+val OrangeContainer  = Color(0xFF3D1A0A)
+val BlueTrust        = Color(0xFF4FC3F7)
+val BlueTrustDark    = Color(0xFF0288D1)
+val TealSuccess      = Color(0xFF26C6A6)
+val TealSuccessDark  = Color(0xFF00897B)
 val Periwinkle       = Color(0xFF7C83FD)
 
-// Outline
-val OutlineDark      = Color(0xFF2A2A40)
-val OutlineLight     = Color(0xFFDDDDE8)
+// ═══════════════════════════════════════════════════════════════
+// APP THEME ENUM
+// ═══════════════════════════════════════════════════════════════
+
+enum class AppTheme(
+    val label: String,
+    val darkPrimary: Color,
+    val darkPrimaryLight: Color,
+    val darkPrimaryContainer: Color,
+    val lightPrimary: Color,
+    val lightPrimaryContainer: Color,
+    val previewColor: Color
+) {
+    ORANGE(
+        label = "Orange",
+        darkPrimary          = Color(0xFFFF6B35),
+        darkPrimaryLight     = Color(0xFFFF8E5E),
+        darkPrimaryContainer = Color(0xFF3D1A0A),
+        lightPrimary         = Color(0xFFD95A28),
+        lightPrimaryContainer= Color(0xFFFFDDD0),
+        previewColor         = Color(0xFFFF6B35)
+    ),
+    BLUE(
+        label = "Blue",
+        darkPrimary          = Color(0xFF42A5F5),
+        darkPrimaryLight     = Color(0xFF90CAF9),
+        darkPrimaryContainer = Color(0xFF0A1E3D),
+        lightPrimary         = Color(0xFF1565C0),
+        lightPrimaryContainer= Color(0xFFD0E4FF),
+        previewColor         = Color(0xFF42A5F5)
+    ),
+    PURPLE(
+        label = "Purple",
+        darkPrimary          = Color(0xFFCE93D8),
+        darkPrimaryLight     = Color(0xFFE1BEE7),
+        darkPrimaryContainer = Color(0xFF2D1040),
+        lightPrimary         = Color(0xFF7B1FA2),
+        lightPrimaryContainer= Color(0xFFF3E5F5),
+        previewColor         = Color(0xFFAB47BC)
+    ),
+    GREEN(
+        label = "Green",
+        darkPrimary          = Color(0xFF81C784),
+        darkPrimaryLight     = Color(0xFFA5D6A7),
+        darkPrimaryContainer = Color(0xFF0A2E10),
+        lightPrimary         = Color(0xFF2E7D32),
+        lightPrimaryContainer= Color(0xFFDCF5DC),
+        previewColor         = Color(0xFF66BB6A)
+    ),
+    RED(
+        label = "Red",
+        darkPrimary          = Color(0xFFEF9A9A),
+        darkPrimaryLight     = Color(0xFFFFCDD2),
+        darkPrimaryContainer = Color(0xFF3D0A0A),
+        lightPrimary         = Color(0xFFC62828),
+        lightPrimaryContainer= Color(0xFFFFE0E0),
+        previewColor         = Color(0xFFEF5350)
+    ),
+    TEAL(
+        label = "Teal",
+        darkPrimary          = Color(0xFF4DB6AC),
+        darkPrimaryLight     = Color(0xFF80CBC4),
+        darkPrimaryContainer = Color(0xFF0A2E2A),
+        lightPrimary         = Color(0xFF00695C),
+        lightPrimaryContainer= Color(0xFFB2DFDB),
+        previewColor         = Color(0xFF26C6A6)
+    ),
+    GOLD(
+        label = "Gold",
+        darkPrimary          = Color(0xFFFFD54F),
+        darkPrimaryLight     = Color(0xFFFFE082),
+        darkPrimaryContainer = Color(0xFF3D2E00),
+        lightPrimary         = Color(0xFFF57F17),
+        lightPrimaryContainer= Color(0xFFFFF8E1),
+        previewColor         = Color(0xFFFFCA28)
+    );
+
+    companion object {
+        fun fromString(name: String): AppTheme =
+            entries.firstOrNull { it.name == name } ?: ORANGE
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════
-// DARK COLOR SCHEME
+// COLOR SCHEME BUILDERS
 // ═══════════════════════════════════════════════════════════════
-private val DarkColorScheme = darkColorScheme(
-    primary              = OrangePrimary,
-    onPrimary            = Color.White,
-    primaryContainer     = OrangeContainer,
-    onPrimaryContainer   = OrangeLight,
 
-    secondary            = BlueTrust,
+private fun buildDarkScheme(theme: AppTheme): ColorScheme = darkColorScheme(
+    primary              = theme.darkPrimary,
+    onPrimary            = Color(0xFF0C0C16),
+    primaryContainer     = theme.darkPrimaryContainer,
+    onPrimaryContainer   = theme.darkPrimaryLight,
+
+    secondary            = Color(0xFF4FC3F7),
     onSecondary          = Color(0xFF002A3F),
     secondaryContainer   = Color(0xFF00334D),
-    onSecondaryContainer = BlueTrust,
+    onSecondaryContainer = Color(0xFF4FC3F7),
 
-    tertiary             = TealSuccess,
+    tertiary             = Color(0xFF26C6A6),
     onTertiary           = Color(0xFF00201A),
     tertiaryContainer    = Color(0xFF00352C),
-    onTertiaryContainer  = TealSuccess,
+    onTertiaryContainer  = Color(0xFF26C6A6),
 
     background           = BgDeep,
     onBackground         = TextPrimary,
@@ -105,24 +172,21 @@ private val DarkColorScheme = darkColorScheme(
     onErrorContainer     = ErrorRed
 )
 
-// ═══════════════════════════════════════════════════════════════
-// LIGHT COLOR SCHEME
-// ═══════════════════════════════════════════════════════════════
-private val LightColorScheme = lightColorScheme(
-    primary              = OrangeDark,
+private fun buildLightScheme(theme: AppTheme): ColorScheme = lightColorScheme(
+    primary              = theme.lightPrimary,
     onPrimary            = Color.White,
-    primaryContainer     = Color(0xFFFFDDD0),
-    onPrimaryContainer   = OrangeDark,
+    primaryContainer     = theme.lightPrimaryContainer,
+    onPrimaryContainer   = theme.lightPrimary,
 
-    secondary            = BlueTrustDark,
+    secondary            = Color(0xFF0288D1),
     onSecondary          = Color.White,
     secondaryContainer   = Color(0xFFD0EEFF),
-    onSecondaryContainer = BlueTrustDark,
+    onSecondaryContainer = Color(0xFF0288D1),
 
-    tertiary             = TealSuccessDark,
+    tertiary             = Color(0xFF00897B),
     onTertiary           = Color.White,
     tertiaryContainer    = Color(0xFFB2F0E8),
-    onTertiaryContainer  = TealSuccessDark,
+    onTertiaryContainer  = Color(0xFF00897B),
 
     background           = LightBackground,
     onBackground         = Color(0xFF0E0E1A),
@@ -144,93 +208,36 @@ private val LightColorScheme = lightColorScheme(
 // ═══════════════════════════════════════════════════════════════
 // TYPOGRAPHY
 // ═══════════════════════════════════════════════════════════════
+
 val GymTypography = Typography(
-    displayLarge = TextStyle(
-        fontWeight = FontWeight.Black,
-        fontSize = 36.sp,
-        letterSpacing = (-0.5).sp
-    ),
-    displayMedium = TextStyle(
-        fontWeight = FontWeight.Bold,
-        fontSize = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    displaySmall = TextStyle(
-        fontWeight = FontWeight.Bold,
-        fontSize = 24.sp,
-        letterSpacing = 0.sp
-    ),
-    headlineLarge = TextStyle(
-        fontWeight = FontWeight.Bold,
-        fontSize = 22.sp,
-        letterSpacing = 0.sp
-    ),
-    headlineMedium = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 20.sp,
-        letterSpacing = 0.sp
-    ),
-    headlineSmall = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 18.sp,
-        letterSpacing = 0.sp
-    ),
-    titleLarge = TextStyle(
-        fontWeight = FontWeight.Bold,
-        fontSize = 16.sp,
-        letterSpacing = 0.15.sp
-    ),
-    titleMedium = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 14.sp,
-        letterSpacing = 0.1.sp
-    ),
-    titleSmall = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 13.sp,
-        letterSpacing = 0.1.sp
-    ),
-    bodyLarge = TextStyle(
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        letterSpacing = 0.25.sp
-    ),
-    bodyMedium = TextStyle(
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        letterSpacing = 0.25.sp
-    ),
-    bodySmall = TextStyle(
-        fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-        letterSpacing = 0.4.sp
-    ),
-    labelLarge = TextStyle(
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 14.sp,
-        letterSpacing = 0.1.sp
-    ),
-    labelMedium = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        letterSpacing = 0.5.sp
-    ),
-    labelSmall = TextStyle(
-        fontWeight = FontWeight.Medium,
-        fontSize = 10.sp,
-        letterSpacing = 0.5.sp
-    )
+    displayLarge  = TextStyle(fontWeight = FontWeight.Black,    fontSize = 36.sp, letterSpacing = (-0.5).sp),
+    displayMedium = TextStyle(fontWeight = FontWeight.Bold,     fontSize = 28.sp, letterSpacing = 0.sp),
+    displaySmall  = TextStyle(fontWeight = FontWeight.Bold,     fontSize = 24.sp, letterSpacing = 0.sp),
+    headlineLarge = TextStyle(fontWeight = FontWeight.Bold,     fontSize = 22.sp, letterSpacing = 0.sp),
+    headlineMedium= TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 20.sp, letterSpacing = 0.sp),
+    headlineSmall = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 18.sp, letterSpacing = 0.sp),
+    titleLarge    = TextStyle(fontWeight = FontWeight.Bold,     fontSize = 16.sp, letterSpacing = 0.15.sp),
+    titleMedium   = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 14.sp, letterSpacing = 0.1.sp),
+    titleSmall    = TextStyle(fontWeight = FontWeight.Medium,   fontSize = 13.sp, letterSpacing = 0.1.sp),
+    bodyLarge     = TextStyle(fontWeight = FontWeight.Normal,   fontSize = 16.sp, letterSpacing = 0.25.sp),
+    bodyMedium    = TextStyle(fontWeight = FontWeight.Normal,   fontSize = 14.sp, letterSpacing = 0.25.sp),
+    bodySmall     = TextStyle(fontWeight = FontWeight.Normal,   fontSize = 12.sp, letterSpacing = 0.4.sp),
+    labelLarge    = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 14.sp, letterSpacing = 0.1.sp),
+    labelMedium   = TextStyle(fontWeight = FontWeight.Medium,   fontSize = 12.sp, letterSpacing = 0.5.sp),
+    labelSmall    = TextStyle(fontWeight = FontWeight.Medium,   fontSize = 10.sp, letterSpacing = 0.5.sp)
 )
 
 // ═══════════════════════════════════════════════════════════════
 // THEME COMPOSABLE
 // ═══════════════════════════════════════════════════════════════
+
 @Composable
 fun GymTrackerTheme(
     darkTheme: Boolean = true,
+    appTheme: AppTheme = AppTheme.ORANGE,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = if (darkTheme) buildDarkScheme(appTheme) else buildLightScheme(appTheme)
 
     val view = LocalView.current
     if (!view.isInEditMode) {

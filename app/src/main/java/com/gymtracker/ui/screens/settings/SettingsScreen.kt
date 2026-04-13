@@ -1,8 +1,12 @@
 package com.gymtracker.ui.screens.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,6 +56,10 @@ class SettingsViewModel(private val app: GymTrackerApp) : ViewModel() {
             val current = repo.getPreferencesSync() ?: UserPreferencesEntity()
             repo.updatePreferences(transform(current))
         }
+    }
+
+    fun saveColorTheme(theme: AppTheme) {
+        updatePrefs { it.copy(colorTheme = theme.name) }
     }
 
     fun exportData() {
@@ -112,6 +120,12 @@ fun SettingsScreen(
                 subtitle = "Use dark theme",
                 checked = p.darkMode,
                 onCheckedChange = { viewModel.updatePrefs { it.copy(darkMode = !it.darkMode) } }
+            )
+        }
+        item {
+            ThemePickerCard(
+                selectedTheme = AppTheme.fromString(p.colorTheme),
+                onThemeSelected = { viewModel.saveColorTheme(it) }
             )
         }
 
@@ -408,6 +422,52 @@ fun SettingsValue(icon: ImageVector, title: String, value: String) {
             Spacer(modifier = Modifier.width(16.dp))
             Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+fun ThemePickerCard(selectedTheme: AppTheme, onThemeSelected: (AppTheme) -> Unit) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Palette, null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text("Accent Color", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text("Current: ${selectedTheme.label}", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(AppTheme.entries) { theme ->
+                    val isSelected = theme == selectedTheme
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(theme.previewColor, CircleShape)
+                            .then(
+                                if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                else Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                            )
+                            .clickable { onThemeSelected(theme) }
+                    ) {
+                        if (isSelected) {
+                            Icon(
+                                Icons.Filled.Check,
+                                contentDescription = theme.label,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -248,7 +248,8 @@ data class UserPreferencesEntity(
     val soundEnabled: Boolean = true,
     val vibrationEnabled: Boolean = true,
     val bodyWeightKg: Double? = null,
-    val isFemale: Boolean = false
+    val isFemale: Boolean = false,
+    val colorTheme: String = "ORANGE"    // AppTheme enum name
 )
 
 // ═══════════════════════════════════════════════════════════════
