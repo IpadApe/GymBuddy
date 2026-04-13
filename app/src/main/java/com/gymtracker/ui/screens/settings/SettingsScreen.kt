@@ -1,7 +1,9 @@
 package com.gymtracker.ui.screens.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
@@ -86,6 +88,9 @@ fun SettingsScreen(
 ) {
     val prefs by viewModel.prefs.collectAsState(initial = null)
     val p = prefs ?: UserPreferencesEntity()
+    val updateState by viewModel.updateCheckState.collectAsState()
+    val availableUpdate by viewModel.availableUpdate.collectAsState()
+    val context = LocalContext.current
     var showPlateCalc by remember { mutableStateOf(false) }
 
     LazyColumn(
@@ -211,11 +216,147 @@ fun SettingsScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("GymTracker", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("Version 1.0.0", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("GymBuddy", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(
+                                "Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        // Green dot = up to date, orange dot = update available
+                        if (updateState == UpdateCheckState.UP_TO_DATE) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(Color(0xFF4CAF50), CircleShape)
+                            )
+                        } else if (updateState == UpdateCheckState.UPDATE_AVAILABLE) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .background(Color(0xFFFFA726), CircleShape)
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Free forever. No accounts. No subscriptions. Your data stays on your device.",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "Free forever. No accounts. No subscriptions. Your data stays on your device.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        // Update checker
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = when (updateState) {
+                                UpdateCheckState.UPDATE_AVAILABLE -> Icons.Filled.SystemUpdate
+                                UpdateCheckState.UP_TO_DATE -> Icons.Filled.CheckCircle
+                                UpdateCheckState.ERROR -> Icons.Filled.ErrorOutline
+                                else -> Icons.Filled.Sync
+                            },
+                            contentDescription = null,
+                            tint = when (updateState) {
+                                UpdateCheckState.UPDATE_AVAILABLE -> Color(0xFFFFA726)
+                                UpdateCheckState.UP_TO_DATE -> Color(0xFF4CAF50)
+                                UpdateCheckState.ERROR -> MaterialTheme.colorScheme.error
+                                else -> MaterialTheme.colorScheme.primary
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                when (updateState) {
+                                    UpdateCheckState.IDLE -> "Check for Updates"
+                                    UpdateCheckState.CHECKING -> "Checking…"
+                                    UpdateCheckState.UP_TO_DATE -> "Up to date"
+                                    UpdateCheckState.UPDATE_AVAILABLE -> "Update available — v${availableUpdate?.versionName}"
+                                    UpdateCheckState.ERROR -> "Could not check for updates"
+                                },
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                when (updateState) {
+                                    UpdateCheckState.IDLE -> "Tap to check for a newer version"
+                                    UpdateCheckState.CHECKING -> "Contacting update server…"
+                                    UpdateCheckState.UP_TO_DATE -> "You're on the latest version"
+                                    UpdateCheckState.UPDATE_AVAILABLE -> availableUpdate?.releaseNotes?.lines()?.firstOrNull() ?: "Tap Download to install"
+                                    UpdateCheckState.ERROR -> "Check your internet connection"
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (updateState == UpdateCheckState.CHECKING) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        }
+                    }
+
+                    // Release notes (when update available)
+                    val notes = availableUpdate?.releaseNotes
+                    if (updateState == UpdateCheckState.UPDATE_AVAILABLE && !notes.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "What's new",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            notes,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (updateState == UpdateCheckState.UPDATE_AVAILABLE && availableUpdate != null) {
+                        Button(
+                            onClick = {
+                                AppInstaller.downloadAndInstall(
+                                    context,
+                                    availableUpdate!!.downloadUrl,
+                                    availableUpdate!!.versionName
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                        ) {
+                            Icon(Icons.Filled.Download, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Download & Install")
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { viewModel.checkForUpdate() },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            enabled = updateState != UpdateCheckState.CHECKING
+                        ) {
+                            Icon(Icons.Filled.Refresh, null, modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(if (updateState == UpdateCheckState.UP_TO_DATE) "Check again" else "Check for Updates")
+                        }
+                    }
                 }
             }
         }
