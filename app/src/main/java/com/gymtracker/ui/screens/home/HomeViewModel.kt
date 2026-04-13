@@ -39,8 +39,12 @@ class HomeViewModel(private val app: GymTrackerApp) : ViewModel() {
 
     private fun checkForUpdate() {
         viewModelScope.launch {
-            val info = UpdateChecker.checkForUpdate(BuildConfig.VERSION_CODE)
-            if (info != null) _uiState.update { it.copy(availableUpdate = info) }
+            try {
+                val info = UpdateChecker.checkForUpdate(BuildConfig.VERSION_CODE)
+                if (info != null) _uiState.update { it.copy(availableUpdate = info) }
+            } catch (_: Exception) {
+                // Silent on home screen — user can check manually in Settings
+            }
         }
     }
 

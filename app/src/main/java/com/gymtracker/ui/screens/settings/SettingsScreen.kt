@@ -70,12 +70,16 @@ class SettingsViewModel(app: GymTrackerApp) : ViewModel() {
     fun checkForUpdate() {
         viewModelScope.launch {
             _updateCheckState.value = UpdateCheckState.CHECKING
-            val info = UpdateChecker.checkForUpdate(BuildConfig.VERSION_CODE)
-            if (info != null) {
-                _availableUpdate.value = info
-                _updateCheckState.value = UpdateCheckState.UPDATE_AVAILABLE
-            } else {
-                _updateCheckState.value = UpdateCheckState.UP_TO_DATE
+            try {
+                val info = UpdateChecker.checkForUpdate(BuildConfig.VERSION_CODE)
+                if (info != null) {
+                    _availableUpdate.value = info
+                    _updateCheckState.value = UpdateCheckState.UPDATE_AVAILABLE
+                } else {
+                    _updateCheckState.value = UpdateCheckState.UP_TO_DATE
+                }
+            } catch (e: Exception) {
+                _updateCheckState.value = UpdateCheckState.ERROR
             }
         }
     }

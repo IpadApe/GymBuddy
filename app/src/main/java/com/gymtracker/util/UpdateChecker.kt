@@ -4,8 +4,10 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.CacheControl
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 // ─── Model ───────────────────────────────────────────────────────────────────
@@ -47,21 +49,23 @@ object UpdateChecker {
     private val gson = Gson()
 
     /**
-     * Returns [UpdateInfo] if a newer version is available, null otherwise.
-     * Never throws — network failures return null silently.
+     * Returns [UpdateInfo] if a newer version is available, null if already up to date.
+     * Throws [IOException] on network failure or unexpected server response —
+     * callers must catch and show an error state rather than silently showing "up to date".
      */
     suspend fun checkForUpdate(currentVersionCode: Int): UpdateInfo? =
         withContext(Dispatchers.IO) {
-            try {
-                val request = Request.Builder().url(VERSION_JSON_URL).build()
-                val response = client.newCall(request).execute()
-                if (response.isSuccessful) {
-                    val body = response.body?.string() ?: return@withContext null
-                    val info = gson.fromJson(body, UpdateInfo::class.java)
-                    if (info.versionCode > currentVersionCode) info else null
-                } else null
-            } catch (_: Exception) {
-                null
+            val request = Request.Builder()
+                .url(VERSION_JSON_URL)
+                .cacheControl(CacheControl.FORCE_NETWORK) // always bypass cache
+                .build()
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                throw IOException("Server returned HTTP ${response.code} for $VERSION_JSON_URL")
             }
+            val body = response.body?.string()
+                ?: throw IOException("Empty response body from $VERSION_JSON_URL")
+            val info = gson.fromJson(body, UpdateInfo::class.java)
+            if (info.versionCode > currentVersionCode) info else null
         }
 }
