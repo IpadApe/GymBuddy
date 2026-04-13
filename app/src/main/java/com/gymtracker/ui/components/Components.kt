@@ -82,7 +82,8 @@ fun GradientButton(
     icon: ImageVector? = null,
     enabled: Boolean = true
 ) {
-    val colors = listOf(OrangePrimary, OrangeDark)
+    val primary = MaterialTheme.colorScheme.primary
+    val colors = listOf(primary, primary.copy(alpha = 0.75f))
     Button(
         onClick = onClick,
         modifier = modifier.height(52.dp),

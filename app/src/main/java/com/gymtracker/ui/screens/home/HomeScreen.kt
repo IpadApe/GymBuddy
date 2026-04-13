@@ -76,7 +76,7 @@ fun HomeScreen(
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                OrangePrimary.copy(alpha = 0.18f),
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
                                 Color.Transparent
                             )
                         )
@@ -104,14 +104,14 @@ fun HomeScreen(
                             Icon(
                                 Icons.Filled.LocalFireDepartment,
                                 null,
-                                tint = OrangePrimary,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 "${uiState.weeklySessionCount} workout${if (uiState.weeklySessionCount != 1) "s" else ""} this week",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = OrangePrimary,
+                                color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -148,10 +148,10 @@ fun HomeScreen(
                         .clip(RoundedCornerShape(16.dp))
                         .background(
                             Brush.horizontalGradient(
-                                listOf(OrangePrimary.copy(alpha = 0.25f), OrangeDark.copy(alpha = 0.15f))
+                                listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f), MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
                             )
                         )
-                        .border(1.dp, OrangePrimary.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
                         .clickable { onResumeWorkout(activeWorkoutSessionId!!) }
                         .padding(16.dp)
                 ) {
@@ -160,20 +160,20 @@ fun HomeScreen(
                             modifier = Modifier
                                 .size(44.dp)
                                 .clip(CircleShape)
-                                .background(OrangePrimary.copy(alpha = 0.2f)),
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Filled.FitnessCenter, null, tint = OrangePrimary, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Filled.FitnessCenter, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         }
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Text("Workout in Progress", fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleSmall, color = OrangePrimary)
+                                style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
                             Text("Tap to resume where you left off",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Icon(Icons.Filled.ChevronRight, null, tint = OrangePrimary)
+                        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -214,21 +214,21 @@ fun HomeScreen(
                     value = "${uiState.weeklySessionCount}",
                     label = "Workouts",
                     icon = Icons.Filled.FitnessCenter,
-                    accent = BlueTrust,
+                    accent = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.weight(1f)
                 )
                 WeekStatBox(
                     value = FormatUtils.formatVolume(uiState.weeklyVolume, uiState.useMetric),
                     label = "Volume",
                     icon = Icons.AutoMirrored.Filled.TrendingUp,
-                    accent = TealSuccess,
+                    accent = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.weight(1f)
                 )
                 WeekStatBox(
                     value = if (uiState.avgDuration > 0) FormatUtils.formatDuration(uiState.avgDuration) else "--",
                     label = "Avg Time",
                     icon = Icons.Filled.Timer,
-                    accent = OrangePrimary,
+                    accent = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -257,7 +257,10 @@ fun HomeScreen(
                     label = "Body Map",
                     sublabel = "Muscle status",
                     onClick = onViewBodyMap,
-                    gradient = Brush.linearGradient(listOf(Color(0xFF3D1A8E), Color(0xFF7C83FD))),
+                    gradient = Brush.linearGradient(listOf(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.primary
+                    )),
                     modifier = Modifier.weight(1f)
                 )
                 ExploreCard(
@@ -265,7 +268,10 @@ fun HomeScreen(
                     label = "Progress",
                     sublabel = "PRs & charts",
                     onClick = onViewProgress,
-                    gradient = Brush.linearGradient(listOf(Color(0xFF004D40), TealSuccess)),
+                    gradient = Brush.linearGradient(listOf(
+                        MaterialTheme.colorScheme.tertiaryContainer,
+                        MaterialTheme.colorScheme.tertiary
+                    )),
                     modifier = Modifier.weight(1f)
                 )
                 ExploreCard(
@@ -273,7 +279,10 @@ fun HomeScreen(
                     label = "Exercises",
                     sublabel = "Browse all",
                     onClick = onNavigateToExercises,
-                    gradient = Brush.linearGradient(listOf(Color(0xFF01579B), BlueTrust)),
+                    gradient = Brush.linearGradient(listOf(
+                        MaterialTheme.colorScheme.secondaryContainer,
+                        MaterialTheme.colorScheme.secondary
+                    )),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -303,7 +312,7 @@ fun HomeScreen(
                 ) {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.FlashOn, null, tint = OrangePrimary, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Filled.FlashOn, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 "Train these today",
@@ -381,8 +390,8 @@ fun HomeScreen(
                     onClick = onViewProgress,
                     contentPadding = PaddingValues(0.dp)
                 ) {
-                    Text("See All", color = OrangePrimary, style = MaterialTheme.typography.labelMedium)
-                    Icon(Icons.Filled.ChevronRight, null, tint = OrangePrimary, modifier = Modifier.size(16.dp))
+                    Text("See All", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                    Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                 }
             }
             Spacer(Modifier.height(10.dp))
@@ -523,7 +532,7 @@ fun RecentWorkoutCard(
                 .width(4.dp)
                 .fillMaxHeight()
                 .background(
-                    Brush.verticalGradient(listOf(OrangePrimary, OrangeDark)),
+                    Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)),
                     RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
                 )
                 .align(Alignment.CenterStart)
@@ -548,13 +557,13 @@ fun RecentWorkoutCard(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(OrangePrimary.copy(alpha = 0.15f))
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f))
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
                             session.splitType,
                             style = MaterialTheme.typography.labelSmall,
-                            color = OrangePrimary,
+                            color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -566,13 +575,13 @@ fun RecentWorkoutCard(
                     icon = Icons.Filled.Timer,
                     value = FormatUtils.formatDuration(session.durationSeconds),
                     label = "Duration",
-                    color = BlueTrust
+                    color = MaterialTheme.colorScheme.secondary
                 )
                 WorkoutMetricChip(
                     icon = Icons.Filled.FitnessCenter,
                     value = FormatUtils.formatVolume(session.totalVolumeKg, useMetric),
                     label = "Volume",
-                    color = TealSuccess
+                    color = MaterialTheme.colorScheme.tertiary
                 )
             }
         }

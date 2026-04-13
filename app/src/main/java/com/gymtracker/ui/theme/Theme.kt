@@ -1,7 +1,6 @@
 package com.gymtracker.ui.theme
 
 import android.app.Activity
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -19,7 +18,6 @@ import androidx.core.view.WindowCompat
 
 val BgDeep           = Color(0xFF0C0C16)
 val SurfaceDark      = Color(0xFF131320)
-val SurfaceVariantDk = Color(0xFF1A1A2C)
 val CardDark         = Color(0xFF1F1F32)
 val OutlineDark      = Color(0xFF2A2A40)
 val OutlineLight     = Color(0xFFDDDDE8)
@@ -45,11 +43,8 @@ val MuscleRecovering    = Color(0xFFFFB300)
 val OrangePrimary    = Color(0xFFFF6B35)
 val OrangeDark       = Color(0xFFD95A28)
 val OrangeLight      = Color(0xFFFF8E5E)
-val OrangeContainer  = Color(0xFF3D1A0A)
 val BlueTrust        = Color(0xFF4FC3F7)
-val BlueTrustDark    = Color(0xFF0288D1)
 val TealSuccess      = Color(0xFF26C6A6)
-val TealSuccessDark  = Color(0xFF00897B)
 val Periwinkle       = Color(0xFF7C83FD)
 
 // ═══════════════════════════════════════════════════════════════

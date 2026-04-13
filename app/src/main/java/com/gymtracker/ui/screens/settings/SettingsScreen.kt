@@ -28,7 +28,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gymtracker.BuildConfig
 import com.gymtracker.GymTrackerApp
 import com.gymtracker.data.database.entities.UserPreferencesEntity
-import com.gymtracker.ui.components.GradientButton
 import com.gymtracker.ui.components.NumberInputField
 import com.gymtracker.ui.components.SectionHeader
 import com.gymtracker.ui.theme.*
@@ -41,7 +40,7 @@ import kotlinx.coroutines.launch
 
 enum class UpdateCheckState { IDLE, CHECKING, UP_TO_DATE, UPDATE_AVAILABLE, ERROR }
 
-class SettingsViewModel(private val app: GymTrackerApp) : ViewModel() {
+class SettingsViewModel(app: GymTrackerApp) : ViewModel() {
     private val repo = app.repository
     val prefs = repo.getPreferences()
 
@@ -64,8 +63,7 @@ class SettingsViewModel(private val app: GymTrackerApp) : ViewModel() {
 
     fun exportData() {
         viewModelScope.launch {
-            val data = repo.exportAllData()
-            // In production, serialize to JSON and write to file
+            repo.exportAllData()
         }
     }
 
@@ -99,6 +97,7 @@ fun SettingsScreen(
     val updateState by viewModel.updateCheckState.collectAsState()
     val availableUpdate by viewModel.availableUpdate.collectAsState()
     val context = LocalContext.current
+    @Suppress("UNUSED_VALUE")
     var showPlateCalc by remember { mutableStateOf(false) }
 
     LazyColumn(
