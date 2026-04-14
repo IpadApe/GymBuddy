@@ -58,8 +58,17 @@ jobs:
           echo "NOTES_ESCAPED=$NOTES_ESCAPED" >> $GITHUB_OUTPUT
           echo "Release notes: $NOTES"
 
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > ${{ github.workspace }}/keystore.jks
+
       - name: Build Release APK
         run: ./gradlew assembleRelease --no-daemon
+        env:
+          SIGNING_STORE_PATH: ${{ github.workspace }}/keystore.jks
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
 
       # Sign the APK (optional — skip if no keystore is configured)
       # - name: Sign APK
@@ -73,10 +82,8 @@ jobs:
 
       - name: Rename APK
         run: |
-          mv app/build/outputs/apk/release/app-release-unsigned.apk \
-             app/build/outputs/apk/release/staystrong-${{ steps.version.outputs.VERSION_NAME }}.apk || \
           mv app/build/outputs/apk/release/app-release.apk \
-             app/build/outputs/apk/release/staystrong-${{ steps.version.outputs.VERSION_NAME }}.apk || true
+             app/build/outputs/apk/release/staystrong-${{ steps.version.outputs.VERSION_NAME }}.apk
 
       # Update version.json on the main branch so the in-app checker finds the new version
       - name: Update version.json
