@@ -1,7 +1,7 @@
 {
-  "versionCode": 4,
-  "versionName": "1.3.0",
-  "releaseNotes": "Merge branch 'main' of https://github.com/IpadApe/GymBuddy",
-  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.3.0/staystrong-1.3.0.apk",
+  "versionCode": 5,
+  "versionName": "1.4.0",
+  "releaseNotes": "chore: bump version to 1.4.0",
+  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.4.0/staystrong-1.4.0.apk",
   "mandatory": false
 }
