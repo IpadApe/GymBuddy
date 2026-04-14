@@ -1,7 +1,7 @@
 {
-  "versionCode": 5,
-  "versionName": "1.4.0",
-  "releaseNotes": "chore: bump version to 1.4.0",
-  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.4.0/staystrong-1.4.0.apk",
+  "versionCode": 6,
+  "versionName": "1.5.0",
+  "releaseNotes": "fix: bust GitHub CDN cache on update check",
+  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.5.0/staystrong-1.5.0.apk",
   "mandatory": false
 }
