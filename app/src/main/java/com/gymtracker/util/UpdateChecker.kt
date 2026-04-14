@@ -55,9 +55,11 @@ object UpdateChecker {
      */
     suspend fun checkForUpdate(currentVersionCode: Int): UpdateInfo? =
         withContext(Dispatchers.IO) {
+            // Append timestamp to bust GitHub CDN cache on every check
+            val bustUrl = "$VERSION_JSON_URL?t=${System.currentTimeMillis()}"
             val request = Request.Builder()
-                .url(VERSION_JSON_URL)
-                .cacheControl(CacheControl.FORCE_NETWORK) // always bypass cache
+                .url(bustUrl)
+                .cacheControl(CacheControl.FORCE_NETWORK)
                 .build()
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
