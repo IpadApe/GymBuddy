@@ -1,7 +1,7 @@
 {
-  "versionCode": 2,
-  "versionName": "1.1.0",
-  "releaseNotes": "chore: rename app to StayStrong, fix update download error handling",
-  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.1.0/staystrong-1.1.0.apk",
+  "versionCode": 3,
+  "versionName": "1.2.0",
+  "releaseNotes": "app/build.gradle.kts \u2014 bumped versionCode to 3, versionName to \"1.2.0\" so the installed v2 phone app will detect it as an available update once the release workflow pushes the new version.json",
+  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.2.0/staystrong-1.2.0.apk",
   "mandatory": false
 }
