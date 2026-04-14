@@ -1,7 +1,7 @@
 {
-  "versionCode": 7,
-  "versionName": "1.6.0",
-  "releaseNotes": "fix: remove CacheControl.FORCE_NETWORK from update checker",
-  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.6.2/staystrong-1.6.0.apk",
+  "versionCode": 8,
+  "versionName": "1.7.0",
+  "releaseNotes": "chore: bump version to 1.7.0",
+  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.7.0/staystrong-1.7.0.apk",
   "mandatory": false
 }
