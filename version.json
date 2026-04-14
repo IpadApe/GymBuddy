@@ -1,7 +1,7 @@
 {
   "versionCode": 6,
   "versionName": "1.5.0",
-  "releaseNotes": "fix: bust GitHub CDN cache on update check",
-  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.5.0/staystrong-1.5.0.apk",
+  "releaseNotes": "fix: use apksigner in CI for reliable APK signing",
+  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.6.0/staystrong-1.5.0.apk",
   "mandatory": false
 }
