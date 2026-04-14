@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.CacheControl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
@@ -55,11 +54,12 @@ object UpdateChecker {
      */
     suspend fun checkForUpdate(currentVersionCode: Int): UpdateInfo? =
         withContext(Dispatchers.IO) {
-            // Append timestamp to bust GitHub CDN cache on every check
+            // Timestamp + no-cache header busts GitHub CDN cache on every check
             val bustUrl = "$VERSION_JSON_URL?t=${System.currentTimeMillis()}"
             val request = Request.Builder()
                 .url(bustUrl)
-                .cacheControl(CacheControl.FORCE_NETWORK)
+                .header("Cache-Control", "no-cache, no-store")
+                .header("Pragma", "no-cache")
                 .build()
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
