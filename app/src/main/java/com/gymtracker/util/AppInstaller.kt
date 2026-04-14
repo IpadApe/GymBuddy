@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import java.io.File
 
@@ -15,11 +16,14 @@ object AppInstaller {
 
     /**
      * Enqueues an APK download via DownloadManager and installs it automatically
-     * when the download completes.
-     *
-     * Shows an OS-level download progress notification automatically.
+     * when the download completes. Shows a toast on failure.
      */
     fun downloadAndInstall(context: Context, downloadUrl: String, versionName: String) {
+        if (downloadUrl.isBlank()) {
+            Toast.makeText(context, "No download link available for this update", Toast.LENGTH_LONG).show()
+            return
+        }
+
         val fileName = "staystrong-$versionName.apk"
         val destDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
         // Delete old APK files to avoid confusion
@@ -36,17 +40,47 @@ object AppInstaller {
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val downloadId = dm.enqueue(request)
 
+        Toast.makeText(context, "Downloading update…", Toast.LENGTH_SHORT).show()
+
         // Register a one-shot receiver that fires when the download completes
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context, intent: Intent) {
                 val id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1)
-                if (id == downloadId) {
-                    ctx.unregisterReceiver(this)
-                    val apkFile = File(
-                        ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
-                        fileName
-                    )
-                    if (apkFile.exists()) installApk(ctx, apkFile)
+                if (id != downloadId) return
+                ctx.unregisterReceiver(this)
+
+                // Check whether the download actually succeeded
+                val query = DownloadManager.Query().setFilterById(downloadId)
+                val cursor = dm.query(query)
+                if (cursor.moveToFirst()) {
+                    val statusCol = cursor.getColumnIndex(DownloadManager.COLUMN_STATUS)
+                    val reasonCol = cursor.getColumnIndex(DownloadManager.COLUMN_REASON)
+                    val status = cursor.getInt(statusCol)
+                    val reason = cursor.getInt(reasonCol)
+                    cursor.close()
+
+                    if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                        val apkFile = File(
+                            ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
+                            fileName
+                        )
+                        if (apkFile.exists()) {
+                            installApk(ctx, apkFile)
+                        } else {
+                            Toast.makeText(ctx, "Download completed but file not found", Toast.LENGTH_LONG).show()
+                        }
+                    } else {
+                        val msg = when (reason) {
+                            DownloadManager.ERROR_INSUFFICIENT_SPACE -> "Not enough storage space"
+                            DownloadManager.ERROR_FILE_ERROR -> "Storage error"
+                            DownloadManager.ERROR_HTTP_DATA_ERROR -> "Network error — check your connection"
+                            404 -> "Update file not found on server"
+                            else -> "Download failed (error $reason)"
+                        }
+                        Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    cursor.close()
                 }
             }
         }
