@@ -39,51 +39,41 @@ jobs:
       - name: Extract version info
         id: version
         run: |
-          VERSION_CODE=$(grep 'versionCode' app/build.gradle.kts | grep -o '[0-9]*')
-          VERSION_NAME=$(grep 'versionName' app/build.gradle.kts | grep -o '"[^"]*"' | tr -d '"')
+          VERSION_CODE=$(grep 'versionCode\s*=' app/build.gradle.kts | grep -o '[0-9]\+' | head -1)
+          VERSION_NAME=$(grep 'versionName\s*=' app/build.gradle.kts | grep -o '"[^"]*"' | tr -d '"' | head -1)
           echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_OUTPUT
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION_NAME ($VERSION_CODE)"
 
-      # Extract tag message as release notes (git tag -a v1.1.0 -m "• Fix\n• Feature")
-      - name: Extract release notes
-        id: notes
-        run: |
-          NOTES=$(git tag -l --format='%(contents)' "${{ github.ref_name }}" | head -50)
-          if [ -z "$NOTES" ]; then
-            NOTES="• Bug fixes and improvements"
-          fi
-          # Escape for JSON
-          NOTES_ESCAPED=$(echo "$NOTES" | python3 -c "import sys,json; print(json.dumps(sys.stdin.read().strip()))")
-          echo "NOTES_ESCAPED=$NOTES_ESCAPED" >> $GITHUB_OUTPUT
-          echo "Release notes: $NOTES"
-
-      - name: Decode keystore
-        run: |
-          echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > ${{ github.workspace }}/keystore.jks
-
       - name: Build Release APK
         run: ./gradlew assembleRelease --no-daemon
-        env:
-          SIGNING_STORE_PATH: ${{ github.workspace }}/keystore.jks
-          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
-          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
 
-      # Sign the APK (optional — skip if no keystore is configured)
-      # - name: Sign APK
-      #   uses: r0adkll/sign-android-release@v1
-      #   with:
-      #     releaseDirectory: app/build/outputs/apk/release
-      #     signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-      #     alias: ${{ secrets.ALIAS }}
-      #     keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-      #     keyPassword: ${{ secrets.KEY_PASSWORD }}
-
-      - name: Rename APK
+      # Decode keystore and sign the APK with apksigner
+      - name: Sign APK
         run: |
-          mv app/build/outputs/apk/release/app-release.apk \
-             app/build/outputs/apk/release/staystrong-${{ steps.version.outputs.VERSION_NAME }}.apk
+          echo "${{ secrets.SIGNING_KEY }}" | base64 --decode > keystore.jks
+
+          # Find the latest build-tools version available
+          BUILD_TOOLS=$(ls $ANDROID_SDK_ROOT/build-tools/ | sort -V | tail -1)
+          echo "Using build-tools: $BUILD_TOOLS"
+
+          APKSIGNER="$ANDROID_SDK_ROOT/build-tools/$BUILD_TOOLS/apksigner"
+          UNSIGNED="app/build/outputs/apk/release/app-release-unsigned.apk"
+          SIGNED="app/build/outputs/apk/release/staystrong-${{ steps.version.outputs.VERSION_NAME }}.apk"
+
+          # Sign in-place then rename
+          $APKSIGNER sign \
+            --ks keystore.jks \
+            --ks-key-alias "${{ secrets.SIGNING_KEY_ALIAS }}" \
+            --ks-pass "pass:${{ secrets.SIGNING_STORE_PASSWORD }}" \
+            --key-pass "pass:${{ secrets.SIGNING_KEY_PASSWORD }}" \
+            --out "$SIGNED" \
+            "$UNSIGNED"
+
+          echo "Signed APK created: $SIGNED"
+
+          # Verify the signature
+          $APKSIGNER verify --verbose "$SIGNED"
 
       # Update version.json on the main branch so the in-app checker finds the new version
       - name: Update version.json
@@ -123,12 +113,12 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: update version.json to ${VERSION_NAME} (${VERSION_CODE})"
           git push origin main
 
-      # Create the GitHub Release with the APK attached
+      # Create the GitHub Release with the signed APK attached
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: GymBuddy ${{ steps.version.outputs.VERSION_NAME }}
+          name: StayStrong ${{ steps.version.outputs.VERSION_NAME }}
           body_path: RELEASE_NOTES.md
           files: app/build/outputs/apk/release/staystrong-${{ steps.version.outputs.VERSION_NAME }}.apk
           draft: false
