@@ -2,14 +2,14 @@ package com.gymtracker.ui.screens.onboarding
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -28,10 +28,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.gymtracker.GymTrackerApp
 import com.gymtracker.data.database.entities.UserPreferencesEntity
-import com.gymtracker.data.model.TrainingGoal
-import com.gymtracker.ui.components.GradientButton
 import com.gymtracker.ui.theme.*
 import kotlinx.coroutines.launch
+
+// ─── ViewModel ───────────────────────────────────────────────────────────────
 
 class OnboardingViewModel(private val app: GymTrackerApp) : ViewModel() {
     private val repo = app.repository
@@ -66,305 +66,339 @@ class OnboardingViewModelFactory : ViewModelProvider.Factory {
     }
 }
 
+// ─── Step model ──────────────────────────────────────────────────────────────
+
+data class OnboardingOption(
+    val id: String,
+    val icon: ImageVector,
+    val label: String,
+    val sub: String
+)
+
+private val GOAL_OPTIONS = listOf(
+    OnboardingOption("Strength",    Icons.Filled.FitnessCenter,         "Build Strength",    "Heavy compounds, low reps"),
+    OnboardingOption("Hypertrophy", Icons.Filled.AutoAwesome,           "Gain Muscle",       "Volume-focused training"),
+    OnboardingOption("Endurance",   Icons.Filled.DirectionsRun,         "Build Endurance",   "Higher reps, circuits"),
+    OnboardingOption("Fat_Loss",    Icons.Filled.LocalFireDepartment,   "Lose Fat",          "Cardio + resistance"),
+    OnboardingOption("General",     Icons.Filled.Bolt,                  "Stay Active",       "General fitness"),
+)
+
+private val FREQ_OPTIONS = listOf(
+    OnboardingOption("2", Icons.Filled.LooksTwo,   "2 days / week", "Light schedule"),
+    OnboardingOption("3", Icons.Filled.Looks3,     "3 days / week", "Balanced approach"),
+    OnboardingOption("4", Icons.Filled.Looks4,     "4 days / week", "Intermediate"),
+    OnboardingOption("5", Icons.Filled.Looks5,     "5 days / week", "Advanced"),
+    OnboardingOption("6", Icons.Filled.Looks6,     "6 days / week", "Dedicated athlete"),
+)
+
+private val UNIT_OPTIONS = listOf(
+    OnboardingOption("metric",   Icons.Filled.Straighten,    "Metric",   "Kilograms & centimetres"),
+    OnboardingOption("imperial", Icons.Filled.Straighten,    "Imperial", "Pounds & inches"),
+)
+
+private val SPLIT_OPTIONS = listOf(
+    OnboardingOption("PPL",  Icons.Filled.Refresh,       "Push Pull Legs",      "6 days — popular choice"),
+    OnboardingOption("UL",   Icons.Filled.SwapVert,      "Upper / Lower",       "4 days — balanced"),
+    OnboardingOption("SL55", Icons.Filled.FitnessCenter, "StrongLifts 5×5",     "3 days — beginner"),
+    OnboardingOption("FB",   Icons.Filled.Bolt,          "Full Body 3×/Week",   "3 days — flexible"),
+    OnboardingOption("CUSTOM", Icons.Filled.Edit,        "I'll set it up",      "Custom routine"),
+)
+
+private val STEP_TITLES    = listOf("What's your goal?",     "How often do you train?", "Preferred units?",                "Preferred split?")
+private val STEP_SUBTITLES = listOf("We'll personalise your experience.", "Choose your weekly training days.", "You can change this later in Settings.", "We'll set up a routine for you.")
+
+// ─── Screen ──────────────────────────────────────────────────────────────────
+
 @Composable
 fun OnboardingScreen(
     onComplete: () -> Unit,
     viewModel: OnboardingViewModel = viewModel(factory = OnboardingViewModelFactory())
 ) {
-    var currentPage by remember { mutableIntStateOf(0) }
-    var selectedGoal by remember { mutableStateOf("Hypertrophy") }
-    var daysPerWeek by remember { mutableIntStateOf(4) }
-    var useMetric by remember { mutableStateOf(true) }
-    var selectedSplit by remember { mutableStateOf("PPL") }
+    var step        by remember { mutableIntStateOf(0) }
+    var goal        by remember { mutableStateOf("Hypertrophy") }
+    var freq        by remember { mutableStateOf("4") }
+    var units       by remember { mutableStateOf("metric") }
+    var split       by remember { mutableStateOf("PPL") }
+
+    val totalSteps = 4
+    val selections = listOf(goal, freq, units, split)
+    val currentSelection = selections[step]
+    val progress = (step + 1).toFloat() / totalSteps
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Progress dots
-        Row(
-            modifier = Modifier.padding(vertical = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // ── Top progress bar ──────────────────────────────────────
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .background(MaterialTheme.colorScheme.outline)
         ) {
-            repeat(4) { index ->
-                Box(
-                    modifier = Modifier
-                        .size(if (index == currentPage) 24.dp else 8.dp, 8.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (index == currentPage) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outline
-                        )
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Pages
-        AnimatedContent(
-            targetState = currentPage,
-            transitionSpec = {
-                slideInHorizontally { it } + fadeIn() togetherWith slideOutHorizontally { -it } + fadeOut()
-            },
-            modifier = Modifier.weight(1f),
-            label = "page"
-        ) { page ->
-            when (page) {
-                0 -> WelcomePage()
-                1 -> GoalPage(selectedGoal) { selectedGoal = it }
-                2 -> FrequencyPage(daysPerWeek, selectedSplit, useMetric,
-                    onDaysChange = { daysPerWeek = it },
-                    onSplitChange = { selectedSplit = it },
-                    onMetricChange = { useMetric = it })
-                3 -> ReadyPage()
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Navigation
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (currentPage > 0) {
-                TextButton(onClick = { currentPage-- }) {
-                    Text("Back")
-                }
-            } else {
-                Spacer(modifier = Modifier.width(1.dp))
-            }
-
-            if (currentPage < 3) {
-                GradientButton(
-                    text = "Next",
-                    onClick = { currentPage++ },
-                    icon = Icons.AutoMirrored.Filled.ArrowForward,
-                    modifier = Modifier.width(140.dp)
-                )
-            } else {
-                GradientButton(
-                    text = "Let's Go!",
-                    onClick = {
-                        viewModel.completeOnboarding(selectedGoal, daysPerWeek, useMetric, selectedSplit, onComplete)
-                    },
-                    icon = Icons.Filled.Bolt,
-                    modifier = Modifier.width(160.dp)
-                )
-            }
-        }
-
-        // Skip
-        if (currentPage < 3) {
-            TextButton(onClick = {
-                viewModel.completeOnboarding(selectedGoal, daysPerWeek, useMetric, selectedSplit, onComplete)
-            }) {
-                Text("Skip setup", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-@Composable
-fun WelcomePage() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("💪", fontSize = 72.sp)
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            "GymTracker",
-            style = MaterialTheme.typography.displayLarge,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            "Your free, offline gym companion.\nNo accounts. No subscriptions.\nJust you and your gains.",
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-fun GoalPage(selectedGoal: String, onGoalChange: (String) -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("What's your goal?", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text("We'll tailor recommendations for you", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(modifier = Modifier.height(32.dp))
-
-        TrainingGoal.entries.forEach { goal ->
-            val isSelected = selectedGoal == goal.name
-            Card(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp),
-                onClick = { onGoalChange(goal.name) },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected)
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                    else MaterialTheme.colorScheme.surfaceVariant
-                ),
-                shape = RoundedCornerShape(14.dp),
-                border = if (isSelected) CardDefaults.outlinedCardBorder().copy(
-                    brush = Brush.horizontalGradient(listOf(OrangePrimary, OrangeLight))
-                ) else null
-            ) {
-                Row(
-                    modifier = Modifier.padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        when (goal) {
-                            TrainingGoal.STRENGTH -> Icons.Filled.FitnessCenter
-                            TrainingGoal.HYPERTROPHY -> Icons.Filled.AutoAwesome
-                            TrainingGoal.ENDURANCE -> Icons.AutoMirrored.Filled.DirectionsRun
-                            TrainingGoal.FAT_LOSS -> Icons.Filled.LocalFireDepartment
-                        },
-                        null,
-                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(28.dp)
+                    .fillMaxHeight()
+                    .fillMaxWidth(progress)
+                    .background(
+                        MaterialTheme.colorScheme.primary,
+                        RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp)
                     )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(goal.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(
-                            when (goal) {
-                                TrainingGoal.STRENGTH -> "Heavy weights, low reps, long rest"
-                                TrainingGoal.HYPERTROPHY -> "Moderate weights, higher reps, muscle growth"
-                                TrainingGoal.ENDURANCE -> "Light weights, high reps, short rest"
-                                TrainingGoal.FAT_LOSS -> "Circuit-style, supersets, calorie burn"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FrequencyPage(
-    daysPerWeek: Int,
-    selectedSplit: String,
-    useMetric: Boolean,
-    onDaysChange: (Int) -> Unit,
-    onSplitChange: (String) -> Unit,
-    onMetricChange: (Boolean) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("Training Setup", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black)
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text("Days per week", style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            (2..6).forEach { days ->
-                FilterChip(
-                    selected = daysPerWeek == days,
-                    onClick = { onDaysChange(days) },
-                    label = { Text("$days") },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                    )
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text("Preferred Split", style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(8.dp))
-        val splits = listOf("PPL" to "Push Pull Legs", "UL" to "Upper/Lower", "FB" to "Full Body", "BRO" to "Bro Split")
-        splits.forEach { (key, label) ->
-            FilterChip(
-                selected = selectedSplit == key,
-                onClick = { onSplitChange(key) },
-                label = { Text(label) },
-                modifier = Modifier.padding(vertical = 2.dp),
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                )
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text("Units", style = MaterialTheme.typography.titleMedium)
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = useMetric, onClick = { onMetricChange(true) }, label = { Text("Metric (kg/cm)") })
-            FilterChip(selected = !useMetric, onClick = { onMetricChange(false) }, label = { Text("Imperial (lbs/in)") })
-        }
-    }
-}
-
-@Composable
-fun ReadyPage() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("🎯", fontSize = 72.sp)
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            "You're all set!",
-            style = MaterialTheme.typography.displaySmall,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            "Start tracking your workouts, crush PRs,\nand build the physique you want.",
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            shape = RoundedCornerShape(16.dp)
+        // ── Step dots + counter ───────────────────────────────────
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                FeatureRow("200+ exercises with instructions")
-                FeatureRow("Automatic PR detection")
-                FeatureRow("Muscle map & imbalance tracking")
-                FeatureRow("Progressive overload suggestions")
-                FeatureRow("Prebuilt routine templates")
-                FeatureRow("100% free, 100% offline")
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                repeat(totalSteps) { i ->
+                    Box(
+                        modifier = Modifier
+                            .size(if (i == step) 20.dp else 6.dp, 6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(
+                                if (i <= step) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outline
+                            )
+                    )
+                }
+            }
+            Text(
+                "${step + 1} of $totalSteps",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        // ── Content ───────────────────────────────────────────────
+        AnimatedContent(
+            targetState = step,
+            transitionSpec = {
+                if (targetState > initialState)
+                    slideInHorizontally { it } + fadeIn() togetherWith slideOutHorizontally { -it } + fadeOut()
+                else
+                    slideInHorizontally { -it } + fadeIn() togetherWith slideOutHorizontally { it } + fadeOut()
+            },
+            modifier = Modifier.weight(1f),
+            label = "step"
+        ) { s ->
+            val options = listOf(GOAL_OPTIONS, FREQ_OPTIONS, UNIT_OPTIONS, SPLIT_OPTIONS)[s]
+            val selected = selections[s]
+            val onSelect: (String) -> Unit = when (s) {
+                0 -> { v -> goal  = v }
+                1 -> { v -> freq  = v }
+                2 -> { v -> units = v }
+                else -> { v -> split = v }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 8.dp)
+            ) {
+                // Logo mark
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.primaryContainer
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Filled.FitnessCenter,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                Text(
+                    STEP_TITLES[s],
+                    style = MaterialTheme.typography.displaySmall,
+                    fontWeight = FontWeight.Black,
+                    lineHeight = 30.sp
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    STEP_SUBTITLES[s],
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(28.dp))
+
+                options.forEach { opt ->
+                    OnboardingOptionCard(
+                        opt = opt,
+                        isSelected = selected == opt.id,
+                        onClick = { onSelect(opt.id) }
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
+            }
+        }
+
+        // ── Footer buttons ────────────────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            val isLast = step == totalSteps - 1
+            Button(
+                onClick = {
+                    if (isLast) {
+                        viewModel.completeOnboarding(
+                            goal, freq.toIntOrNull() ?: 4,
+                            units == "metric", split, onComplete
+                        )
+                    } else {
+                        step++
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                ),
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                                )
+                            ),
+                            RoundedCornerShape(16.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        if (isLast) "Get Started 🚀" else "Continue →",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+
+            if (step > 0) {
+                TextButton(
+                    onClick = { step-- },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "← Back",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
 }
 
+// ─── Option card ─────────────────────────────────────────────────────────────
+
 @Composable
-fun FeatureRow(text: String) {
-    Row(
-        modifier = Modifier.padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+fun OnboardingOptionCard(opt: OnboardingOption, isSelected: Boolean, onClick: () -> Unit) {
+    val primary = MaterialTheme.colorScheme.primary
+    val borderColor = if (isSelected) primary else MaterialTheme.colorScheme.outline
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.surfaceVariant
+            )
+            .border(1.5.dp, borderColor, RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(14.dp)
     ) {
-        Icon(Icons.Filled.CheckCircle, null, tint = TealSuccess, modifier = Modifier.size(18.dp))
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // Icon box
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        if (isSelected) primary.copy(alpha = 0.2f)
+                        else MaterialTheme.colorScheme.background
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    opt.icon,
+                    contentDescription = null,
+                    tint = if (isSelected) primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            Spacer(Modifier.width(14.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    opt.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isSelected) primary else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    opt.sub,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            // Radio circle
+            Box(
+                modifier = Modifier
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(if (isSelected) primary else Color.Transparent)
+                    .border(2.dp, if (isSelected) primary else MaterialTheme.colorScheme.outline, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Icon(
+                        Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
+            }
+        }
     }
 }
