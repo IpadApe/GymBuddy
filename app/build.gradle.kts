@@ -125,3 +125,9 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
+
+// IntelliJ / Android Studio calls :app:testClasses before running unit tests,
+// but AGP does not expose that task. Register a no-op alias so the IDE doesn't fail.
+tasks.register("testClasses") {
+    dependsOn("compileDebugUnitTestKotlin")
+}
