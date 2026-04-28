@@ -1,7 +1,7 @@
 {
-  "versionCode": 8,
-  "versionName": "1.7.0",
-  "releaseNotes": "chore: bump version to 1.7.0",
-  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.7.0/staystrong-1.7.0.apk",
+  "versionCode": 9,
+  "versionName": "1.8.0",
+  "releaseNotes": "chore: bump version to 1.8.0\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
+  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.8.0/staystrong-1.8.0.apk",
   "mandatory": false
 }
