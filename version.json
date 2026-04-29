@@ -1,7 +1,7 @@
 {
-  "versionCode": 9,
-  "versionName": "1.8.0",
-  "releaseNotes": "chore: bump version to 1.8.0\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
-  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.8.0/staystrong-1.8.0.apk",
+  "versionCode": 10,
+  "versionName": "1.9.0",
+  "releaseNotes": "fix: add OkHttp/Okio ProGuard rules and keep UpdateInfo for release builds\n\nR8 obfuscates okio internals and can strip UpdateInfo fields in release,\ncausing the update checker to throw an exception \u2192 \"Check your internet\nconnection\" error. Fix:\n- Keep okhttp3.** and okio.** classes/interfaces\n- dontwarn for both (consumer rules not always inherited transitively)\n- Keep com.gymtracker.util.UpdateInfo for Gson reflection (was only\n  covering com.gymtracker.data.**)\n- Bump to 1.9.0 (versionCode 10)\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>",
+  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.9.0/staystrong-1.9.0.apk",
   "mandatory": false
 }
