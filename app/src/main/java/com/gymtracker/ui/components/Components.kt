@@ -156,12 +156,7 @@ fun ExerciseCard(
                     .background(getMuscleColor(muscleGroup).copy(alpha = 0.2f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    getEquipmentIcon(equipment),
-                    contentDescription = null,
-                    tint = getMuscleColor(muscleGroup),
-                    modifier = Modifier.size(22.dp)
-                )
+                Text(getEquipmentEmoji(equipment), fontSize = 20.sp)
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -180,12 +175,7 @@ fun ExerciseCard(
             if (trailing != null) {
                 trailing()
             } else {
-                Icon(
-                    Icons.Filled.ChevronRight,
-                    null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
+                Text("›", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -518,5 +508,19 @@ fun getEquipmentIcon(equipment: String): ImageVector {
         "smith machine" -> Icons.Filled.Straighten
         "ez bar" -> Icons.Filled.FitnessCenter
         else -> Icons.Filled.FitnessCenter
+    }
+}
+
+fun getEquipmentEmoji(equipment: String): String {
+    return when (equipment.lowercase()) {
+        "barbell"      -> "🏋"
+        "dumbbell"     -> "💪"
+        "cable"        -> "🔗"
+        "machine"      -> "⚙"
+        "bodyweight"   -> "🧍"
+        "kettlebell"   -> "⚫"
+        "smith machine"-> "🏋"
+        "ez bar"       -> "🏋"
+        else           -> "🏋"
     }
 }

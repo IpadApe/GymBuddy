@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -101,18 +100,13 @@ fun HomeScreen(
                     if (uiState.weeklySessionCount > 0) {
                         Spacer(Modifier.height(6.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Filled.LocalFireDepartment,
-                                null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
+                            Text("🔥", fontSize = 14.sp)
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 "${uiState.weeklySessionCount} workout${if (uiState.weeklySessionCount != 1) "s" else ""} this week",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.SemiBold
+                                fontWeight = FontWeight.Bold
                             )
                         }
                     }
@@ -184,9 +178,8 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
             Box(modifier = Modifier.padding(horizontal = 20.dp)) {
                 GradientButton(
-                    text = "Start Workout",
+                    text = "▶  Start Workout",
                     onClick = onStartWorkout,
-                    icon = Icons.Filled.PlayArrow,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -213,21 +206,21 @@ fun HomeScreen(
                 WeekStatBox(
                     value = "${uiState.weeklySessionCount}",
                     label = "Workouts",
-                    icon = Icons.Filled.FitnessCenter,
+                    emoji = "🏋",
                     accent = MaterialTheme.colorScheme.secondary,
                     modifier = Modifier.weight(1f)
                 )
                 WeekStatBox(
                     value = FormatUtils.formatVolume(uiState.weeklyVolume, uiState.useMetric),
                     label = "Volume",
-                    icon = Icons.AutoMirrored.Filled.TrendingUp,
+                    emoji = "📈",
                     accent = MaterialTheme.colorScheme.tertiary,
                     modifier = Modifier.weight(1f)
                 )
                 WeekStatBox(
                     value = if (uiState.avgDuration > 0) FormatUtils.formatDuration(uiState.avgDuration) else "--",
                     label = "Avg Time",
-                    icon = Icons.Filled.Timer,
+                    emoji = "⏱",
                     accent = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
@@ -253,7 +246,7 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 ExploreCard(
-                    icon = Icons.Filled.Accessibility,
+                    emoji = "💪",
                     label = "Body Map",
                     sublabel = "Muscle status",
                     onClick = onViewBodyMap,
@@ -264,7 +257,7 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f)
                 )
                 ExploreCard(
-                    icon = Icons.Filled.BarChart,
+                    emoji = "📊",
                     label = "Progress",
                     sublabel = "PRs & charts",
                     onClick = onViewProgress,
@@ -275,7 +268,7 @@ fun HomeScreen(
                     modifier = Modifier.weight(1f)
                 )
                 ExploreCard(
-                    icon = Icons.Filled.Search,
+                    emoji = "🔍",
                     label = "Exercises",
                     sublabel = "Browse all",
                     onClick = onNavigateToExercises,
@@ -312,7 +305,7 @@ fun HomeScreen(
                 ) {
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Filled.FlashOn, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                            Text("⚡", fontSize = 16.sp)
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 "Train these today",
@@ -386,13 +379,13 @@ fun HomeScreen(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
-                TextButton(
-                    onClick = onViewProgress,
-                    contentPadding = PaddingValues(0.dp)
-                ) {
-                    Text("See All", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
-                    Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                }
+                Text(
+                    "See All ›",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.clickable { onViewProgress() }
+                )
             }
             Spacer(Modifier.height(10.dp))
         }
@@ -442,7 +435,7 @@ fun HomeScreen(
 fun WeekStatBox(
     value: String,
     label: String,
-    icon: ImageVector,
+    emoji: String,
     accent: Color,
     modifier: Modifier = Modifier
 ) {
@@ -461,20 +454,20 @@ fun WeekStatBox(
                     .background(accent.copy(alpha = 0.15f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, null, tint = accent, modifier = Modifier.size(18.dp))
+                Text(emoji, fontSize = 16.sp)
             }
             Spacer(Modifier.height(10.dp))
             Text(
                 value,
-                style = MaterialTheme.typography.titleLarge,
+                fontSize   = 18.sp,
                 fontWeight = FontWeight.Black,
-                color = MaterialTheme.colorScheme.onSurface
+                color      = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.height(2.dp))
             Text(
                 label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                fontSize = 10.sp,
+                color    = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
@@ -485,7 +478,7 @@ fun WeekStatBox(
 // ─────────────────────────────────────────────────────────────────
 @Composable
 fun ExploreCard(
-    icon: ImageVector,
+    emoji: String,
     label: String,
     sublabel: String,
     onClick: () -> Unit,
@@ -500,12 +493,10 @@ fun ExploreCard(
             .padding(14.dp)
     ) {
         Column {
-            Icon(icon, null, tint = Color.White, modifier = Modifier.size(26.dp))
-            Spacer(Modifier.height(12.dp))
-            Text(label, style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold, color = Color.White)
-            Text(sublabel, style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.7f))
+            Text(emoji, fontSize = 22.sp)
+            Spacer(Modifier.height(10.dp))
+            Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(sublabel, fontSize = 10.sp, color = Color.White.copy(alpha = 0.7f))
         }
     }
 }
@@ -572,13 +563,13 @@ fun RecentWorkoutCard(
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 WorkoutMetricChip(
-                    icon = Icons.Filled.Timer,
+                    emoji = "⏱",
                     value = FormatUtils.formatDuration(session.durationSeconds),
                     label = "Duration",
                     color = MaterialTheme.colorScheme.secondary
                 )
                 WorkoutMetricChip(
-                    icon = Icons.Filled.FitnessCenter,
+                    emoji = "🏋",
                     value = FormatUtils.formatVolume(session.totalVolumeKg, useMetric),
                     label = "Volume",
                     color = MaterialTheme.colorScheme.tertiary
@@ -589,9 +580,9 @@ fun RecentWorkoutCard(
 }
 
 @Composable
-private fun WorkoutMetricChip(icon: ImageVector, value: String, label: String, color: Color) {
+private fun WorkoutMetricChip(emoji: String, value: String, label: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = color, modifier = Modifier.size(14.dp))
+        Text(emoji, fontSize = 12.sp, color = color)
         Spacer(Modifier.width(5.dp))
         Column {
             Text(value, style = MaterialTheme.typography.labelLarge,

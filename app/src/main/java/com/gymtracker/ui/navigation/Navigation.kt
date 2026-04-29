@@ -2,17 +2,20 @@ package com.gymtracker.ui.navigation
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.*
-import androidx.compose.material.icons.automirrored.outlined.*
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.*
 import androidx.navigation.compose.*
 import com.gymtracker.GymTrackerApp
@@ -54,28 +57,97 @@ sealed class Screen(val route: String) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// BOTTOM NAV ITEMS
+// BOTTOM NAV ITEMS — emoji icons matching design spec
 // ═══════════════════════════════════════════════════════════════
 data class BottomNavItem(
     val label: String,
     val route: String,
-    val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector
+    val emoji: String
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem("Home", Screen.Home.route, Icons.Filled.Home, Icons.Outlined.Home),
-    BottomNavItem("Exercises", Screen.Exercises.route, Icons.Filled.FitnessCenter, Icons.Outlined.FitnessCenter),
-    BottomNavItem("Routines", Screen.Routines.route, Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth),
-    BottomNavItem("Progress", Screen.Progress.route, Icons.AutoMirrored.Filled.TrendingUp, Icons.AutoMirrored.Outlined.TrendingUp),
-    BottomNavItem("GymMap", Screen.GymMap.route, Icons.Filled.Place, Icons.Outlined.Place),
-    BottomNavItem("Settings", Screen.Settings.route, Icons.Filled.Settings, Icons.Outlined.Settings)
+    BottomNavItem("Home",      Screen.Home.route,      "🏠"),
+    BottomNavItem("Exercises", Screen.Exercises.route,  "🏋"),
+    BottomNavItem("Routines",  Screen.Routines.route,   "📅"),
+    BottomNavItem("Progress",  Screen.Progress.route,   "📈"),
+    BottomNavItem("GymMap",    Screen.GymMap.route,     "📍"),
+    BottomNavItem("Settings",  Screen.Settings.route,   "⚙️"),
 )
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM BOTTOM NAV — matches BottomNav.jsx design spec
+// surface bg · 1dp outline top border · pill indicator · emoji icons
+// ═══════════════════════════════════════════════════════════════
+@Composable
+private fun DesignBottomNav(
+    currentRoute: String?,
+    items: List<BottomNavItem>,
+    navController: NavController
+) {
+    val primary        = MaterialTheme.colorScheme.primary
+    val onSurfaceVar   = MaterialTheme.colorScheme.onSurfaceVariant
+    val surface        = MaterialTheme.colorScheme.surface
+    val outline        = MaterialTheme.colorScheme.outline
+
+    Column {
+        HorizontalDivider(color = outline, thickness = 1.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(surface)
+                .padding(top = 6.dp, bottom = 10.dp),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            items.forEach { item ->
+                val selected = currentRoute == item.route
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .widthIn(min = 44.dp)
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) {
+                            if (currentRoute != item.route) {
+                                navController.navigate(item.route) {
+                                    popUpTo(Screen.Home.route) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        }
+                        .padding(vertical = 2.dp)
+                ) {
+                    // Pill indicator
+                    Box(
+                        modifier = Modifier
+                            .size(width = 36.dp, height = 20.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (selected) primary.copy(alpha = 0.12f)
+                                else Color.Transparent
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(item.emoji, fontSize = 16.sp)
+                    }
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        item.label,
+                        fontSize    = 9.sp,
+                        fontWeight  = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        color       = if (selected) primary else onSurfaceVar,
+                        letterSpacing = 0.3.sp
+                    )
+                }
+            }
+        }
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════
 // MAIN SCAFFOLD WITH NAV
 // ═══════════════════════════════════════════════════════════════
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainNavigation(startOnboarding: Boolean = false) {
     val navController = rememberNavController()
@@ -88,40 +160,7 @@ fun MainNavigation(startOnboarding: Boolean = false) {
     Scaffold(
         bottomBar = {
             if (showBottomBar) {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 0.dp
-                ) {
-                    bottomNavItems.forEach { item ->
-                        val selected = currentRoute == item.route
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = {
-                                if (currentRoute != item.route) {
-                                    navController.navigate(item.route) {
-                                        popUpTo(Screen.Home.route) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    if (selected) item.selectedIcon else item.unselectedIcon,
-                                    contentDescription = item.label
-                                )
-                            },
-                            label = { Text(item.label, style = MaterialTheme.typography.labelSmall) },
-                            colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                    }
-                }
+                DesignBottomNav(currentRoute, bottomNavItems, navController)
             }
         }
     ) { paddingValues ->

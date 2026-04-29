@@ -1,6 +1,7 @@
 package com.gymtracker.ui.screens.progress
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -228,199 +229,300 @@ fun ProgressScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val months = listOf("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec")
+    var selectedTab by remember { mutableStateOf("overview") }
+    val tabs = listOf("overview", "PRs", "measurements")
+    val completedSessions = state.sessions.filter { it.endTime != null }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // ── HEADER + TABS ─────────────────────────────────────────
         item {
             Text(
                 "Progress",
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Black,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(start = 20.dp, top = 20.dp, end = 20.dp)
             )
-        }
-
-        // Stats overview
-        item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Week Volume", FormatUtils.formatVolume(state.weeklyVolume, state.useMetric),
-                    Icons.Filled.FitnessCenter, BlueTrust, Modifier.weight(1f))
-                StatCard("Month Volume", FormatUtils.formatVolume(state.monthlyVolume, state.useMetric),
-                    Icons.AutoMirrored.Filled.TrendingUp, TealSuccess, Modifier.weight(1f))
-            }
-        }
-        item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard("Sessions/Week", "${state.weeklyCount}", Icons.Filled.CalendarMonth, OrangePrimary, Modifier.weight(1f))
-                StatCard("Avg Duration", if(state.avgDuration>0) FormatUtils.formatDuration(state.avgDuration) else "--",
-                    Icons.Filled.Timer, Periwinkle, Modifier.weight(1f))
-            }
-        }
-
-        // Calendar
-        item {
-            SectionHeader(title = "Workout Calendar")
-            Spacer(modifier = Modifier.height(8.dp))
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(16.dp)
+            Spacer(Modifier.height(14.dp))
+            // Segmented tab bar — matching design spec pill tabs
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(4.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = { viewModel.changeMonth(-1) }) {
-                            Icon(Icons.Filled.ChevronLeft, "Previous")
-                        }
-                        Text(
-                            "${months[state.selectedMonth]} ${state.selectedYear}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        IconButton(onClick = { viewModel.changeMonth(1) }) {
-                            Icon(Icons.Filled.ChevronRight, "Next")
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Day labels
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        listOf("M","T","W","T","F","S","S").forEach {
-                            Text(
-                                it, modifier = Modifier.weight(1f),
-                                textAlign = TextAlign.Center,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                tabs.forEach { tab ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(
+                                if (tab == selectedTab) MaterialTheme.colorScheme.primary
+                                else Color.Transparent
                             )
-                        }
+                            .clickable { selectedTab = tab }
+                            .padding(vertical = 7.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            tab.replaceFirstChar { it.uppercase() },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (tab == selectedTab) Color.White
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            }
+        }
 
-                    // Calendar grid
-                    val daysInMonth = FormatUtils.getDaysInMonth(state.selectedYear, state.selectedMonth)
-                    val cal = Calendar.getInstance().apply { set(state.selectedYear, state.selectedMonth, 1) }
-                    val firstDayOfWeek = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7 // Monday=0
+        // ══════════════════════════════════════════════════════════
+        // OVERVIEW TAB
+        // ══════════════════════════════════════════════════════════
+        if (selectedTab == "overview") {
+            // Stats cards row 1
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard("Week Volume", FormatUtils.formatVolume(state.weeklyVolume, state.useMetric),
+                        Icons.Filled.FitnessCenter, BlueTrust, Modifier.weight(1f))
+                    StatCard("Month Volume", FormatUtils.formatVolume(state.monthlyVolume, state.useMetric),
+                        Icons.AutoMirrored.Filled.TrendingUp, TealSuccess, Modifier.weight(1f))
+                }
+            }
+            // Stats cards row 2
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    StatCard("Sessions/Week", "${state.weeklyCount}", Icons.Filled.CalendarMonth, OrangePrimary, Modifier.weight(1f))
+                    StatCard("Avg Duration",
+                        if (state.avgDuration > 0) FormatUtils.formatDuration(state.avgDuration) else "--",
+                        Icons.Filled.Timer, Periwinkle, Modifier.weight(1f))
+                }
+            }
 
-                    val totalCells = firstDayOfWeek + daysInMonth
-                    val rows = (totalCells + 6) / 7
-
-                    for (row in 0 until rows) {
+            // Calendar
+            item {
+                Text(
+                    "WORKOUT CALENDAR",
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                )
+                Spacer(Modifier.height(8.dp))
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(onClick = { viewModel.changeMonth(-1) }) {
+                                Icon(Icons.Filled.ChevronLeft, "Previous")
+                            }
+                            Text(
+                                "${months[state.selectedMonth]} ${state.selectedYear}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            IconButton(onClick = { viewModel.changeMonth(1) }) {
+                                Icon(Icons.Filled.ChevronRight, "Next")
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            for (col in 0 until 7) {
-                                val cellIndex = row * 7 + col
-                                val day = cellIndex - firstDayOfWeek + 1
-                                if (day in 1..daysInMonth) {
-                                    val hasWorkout = state.calendarDays.containsKey(day)
-                                    val isToday = day == Calendar.getInstance().get(Calendar.DAY_OF_MONTH) &&
+                            listOf("M","T","W","T","F","S","S").forEach {
+                                Text(
+                                    it, modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        val daysInMonth = FormatUtils.getDaysInMonth(state.selectedYear, state.selectedMonth)
+                        val cal = Calendar.getInstance().apply { set(state.selectedYear, state.selectedMonth, 1) }
+                        val firstDayOfWeek = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7
+                        val rows = ((firstDayOfWeek + daysInMonth) + 6) / 7
+                        for (row in 0 until rows) {
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                for (col in 0 until 7) {
+                                    val day = row * 7 + col - firstDayOfWeek + 1
+                                    if (day in 1..daysInMonth) {
+                                        val hasWorkout = state.calendarDays.containsKey(day)
+                                        val isToday = day == Calendar.getInstance().get(Calendar.DAY_OF_MONTH) &&
                                             state.selectedMonth == Calendar.getInstance().get(Calendar.MONTH) &&
                                             state.selectedYear == Calendar.getInstance().get(Calendar.YEAR)
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .aspectRatio(1f)
-                                            .padding(2.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                when {
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f).aspectRatio(1f).padding(2.dp).clip(CircleShape)
+                                                .background(when {
                                                     hasWorkout -> MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                                                    isToday -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-                                                    else -> Color.Transparent
-                                                }
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            "$day",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = if (hasWorkout) Color.White else MaterialTheme.colorScheme.onSurface,
-                                            fontSize = 11.sp
-                                        )
+                                                    isToday   -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+                                                    else      -> Color.Transparent
+                                                }),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                "$day",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = if (hasWorkout) Color.White else MaterialTheme.colorScheme.onSurface,
+                                                fontSize = 11.sp
+                                            )
+                                        }
+                                    } else {
+                                        Spacer(modifier = Modifier.weight(1f))
                                     }
-                                } else {
-                                    Spacer(modifier = Modifier.weight(1f))
                                 }
                             }
                         }
                     }
                 }
             }
-        }
 
-        // Progressive Overload Suggestions
-        if (state.overloadSuggestions.isNotEmpty()) {
-            item { SectionHeader(title = "Progressive Overload") }
-            items(state.overloadSuggestions.take(5)) { suggestion ->
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = TealSuccess.copy(alpha = 0.08f)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
+            // Progressive Overload
+            if (state.overloadSuggestions.isNotEmpty()) {
+                item {
+                    Text(
+                        "PROGRESSIVE OVERLOAD",
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                    )
+                }
+                items(state.overloadSuggestions.take(5)) { suggestion ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        colors = CardDefaults.cardColors(containerColor = TealSuccess.copy(alpha = 0.08f)),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = TealSuccess, modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(suggestion.exerciseName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                            Text(suggestion.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.TrendingUp, null, tint = TealSuccess, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(suggestion.exerciseName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                                Text(suggestion.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Volume over time chart
-        if (state.dailyVolume.size >= 2) {
-            item {
-                SectionHeader(title = "Volume Over Time")
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        VolumeLineChart(
-                            data = state.dailyVolume,
-                            useMetric = state.useMetric,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+            // Volume over time chart
+            if (state.dailyVolume.size >= 2) {
+                item {
+                    Text(
+                        "VOLUME OVER TIME",
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            VolumeLineChart(data = state.dailyVolume, useMetric = state.useMetric, modifier = Modifier.fillMaxWidth())
+                        }
                     }
                 }
             }
+
+            // Workout History
+            item {
+                Text(
+                    "WORKOUT HISTORY",
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                )
+            }
+            if (completedSessions.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Filled.FitnessCenter,
+                        title = "No workouts yet",
+                        subtitle = "Complete a workout to see your history here"
+                    )
+                }
+            }
+            items(completedSessions.take(20)) { session ->
+                WorkoutSessionCard(
+                    name = session.name,
+                    date = FormatUtils.formatDate(session.startTime),
+                    duration = FormatUtils.formatDuration(session.durationSeconds),
+                    volume = FormatUtils.formatVolume(session.totalVolumeKg, state.useMetric),
+                    splitType = session.splitType,
+                    onClick = { viewModel.openSessionDetail(session) },
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
 
-        // Recent PRs
-        if (state.recentPRs.isNotEmpty()) {
-            item { SectionHeader(title = "Recent Personal Records") }
-            items(state.recentPRs.take(5)) { pr ->
+        // ══════════════════════════════════════════════════════════
+        // PRs TAB
+        // ══════════════════════════════════════════════════════════
+        if (selectedTab == "PRs") {
+            item {
+                Text(
+                    "PERSONAL RECORDS",
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                )
+            }
+            if (state.recentPRs.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Filled.EmojiEvents,
+                        title = "No PRs yet",
+                        subtitle = "Complete workouts to set personal records"
+                    )
+                }
+            }
+            items(state.recentPRs) { pr ->
                 Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = WarningOrange.copy(alpha = 0.08f)),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
+                        modifier = Modifier.fillMaxWidth().padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Filled.EmojiEvents, null, tint = WarningOrange, modifier = Modifier.size(24.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp).clip(RoundedCornerShape(10.dp))
+                                .background(WarningOrange.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("🏆", fontSize = 18.sp)
+                        }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                pr.exerciseName,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                FormatUtils.formatDate(pr.achievedAt),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text(pr.exerciseName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Text(FormatUtils.formatDate(pr.achievedAt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Text(
                             FormatUtils.formatWeight(pr.value, state.useMetric),
@@ -433,64 +535,56 @@ fun ProgressScreen(
             }
         }
 
-        // Body Measurements
-        item {
-            SectionHeader(
-                title = "Body Measurements",
-                action = "Add",
-                onAction = { viewModel.showMeasurementDialog() }
-            )
-        }
-        if (state.measurements.isEmpty()) {
+        // ══════════════════════════════════════════════════════════
+        // MEASUREMENTS TAB
+        // ══════════════════════════════════════════════════════════
+        if (selectedTab == "measurements") {
             item {
-                EmptyState(
-                    icon = Icons.Filled.Straighten,
-                    title = "No measurements yet",
-                    subtitle = "Track your body measurements to see progress over time",
-                    actionLabel = "Add Measurement",
-                    onAction = { viewModel.showMeasurementDialog() }
-                )
-            }
-        } else {
-            items(state.measurements.take(5)) { m ->
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    shape = RoundedCornerShape(12.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Text(FormatUtils.formatDate(m.date), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                            m.bodyWeight?.let { MiniStat(Icons.Filled.MonitorWeight, FormatUtils.formatWeight(it, state.useMetric), "Weight") }
-                            m.bodyFatPercentage?.let { MiniStat(Icons.Filled.Percent, "${it}%", "Body Fat") }
-                            m.chest?.let { MiniStat(Icons.Filled.Straighten, FormatUtils.formatDistance(it, state.useMetric), "Chest") }
+                    Text(
+                        "BODY MEASUREMENTS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                    )
+                    TextButton(onClick = { viewModel.showMeasurementDialog() }) {
+                        Text("+ Add", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            if (state.measurements.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Filled.Straighten,
+                        title = "No measurements yet",
+                        subtitle = "Track your body measurements to see progress over time",
+                        actionLabel = "Add Measurement",
+                        onAction = { viewModel.showMeasurementDialog() }
+                    )
+                }
+            } else {
+                items(state.measurements) { m ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Text(FormatUtils.formatDate(m.date), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                                m.bodyWeight?.let { MiniStat(Icons.Filled.MonitorWeight, FormatUtils.formatWeight(it, state.useMetric), "Weight") }
+                                m.bodyFatPercentage?.let { MiniStat(Icons.Filled.Percent, "${it}%", "Body Fat") }
+                                m.chest?.let { MiniStat(Icons.Filled.Straighten, FormatUtils.formatDistance(it, state.useMetric), "Chest") }
+                            }
                         }
                     }
                 }
             }
-        }
-
-        // Workout History
-        item { SectionHeader(title = "Workout History") }
-        val completedSessions = state.sessions.filter { it.endTime != null }
-        if (completedSessions.isEmpty()) {
-            item {
-                EmptyState(
-                    icon = Icons.Filled.FitnessCenter,
-                    title = "No workouts yet",
-                    subtitle = "Complete a workout to see your history here"
-                )
-            }
-        }
-        items(completedSessions.take(20)) { session ->
-            WorkoutSessionCard(
-                name = session.name,
-                date = FormatUtils.formatDate(session.startTime),
-                duration = FormatUtils.formatDuration(session.durationSeconds),
-                volume = FormatUtils.formatVolume(session.totalVolumeKg, state.useMetric),
-                splitType = session.splitType,
-                onClick = { viewModel.openSessionDetail(session) }
-            )
         }
 
         item { Spacer(modifier = Modifier.height(16.dp)) }
