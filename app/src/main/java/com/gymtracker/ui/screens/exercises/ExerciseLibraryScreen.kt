@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -72,7 +73,7 @@ class ExerciseLibraryViewModel(app: GymTrackerApp) : ViewModel() {
     }
 
     fun onMuscleFilter(muscle: String?) {
-        _state.update { it.copy(selectedMuscle = if (it.selectedMuscle == muscle) null else muscle) }
+        _state.update { it.copy(selectedMuscle = if (muscle == null || it.selectedMuscle == muscle) null else muscle) }
         applyFilters()
     }
 
@@ -167,7 +168,7 @@ fun ExerciseLibraryScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             placeholder = { Text("Search exercises...") },
-            leadingIcon = { Icon(Icons.Filled.Search, null) },
+            leadingIcon = { Text("🔍", fontSize = 16.sp) },
             trailingIcon = {
                 if (state.searchQuery.isNotEmpty()) {
                     IconButton(onClick = { viewModel.onSearchChanged("") }) {
@@ -186,12 +187,23 @@ fun ExerciseLibraryScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Muscle group filter chips
+        // Muscle group filter chips (with "All" at start)
         LazyRow(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            item {
+                FilterChip(
+                    selected = state.selectedMuscle == null,
+                    onClick = { viewModel.onMuscleFilter(null) },
+                    label = { Text("All", style = MaterialTheme.typography.labelSmall) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                        selectedLabelColor = MaterialTheme.colorScheme.primary
+                    )
+                )
+            }
             items(MuscleGroup.entries.toList()) { muscle ->
                 FilterChip(
                     selected = state.selectedMuscle == muscle.displayName,
