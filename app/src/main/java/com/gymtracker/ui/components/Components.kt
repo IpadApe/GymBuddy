@@ -41,7 +41,7 @@ fun StatCard(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -142,7 +142,7 @@ fun ExerciseCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(20.dp)
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -211,7 +211,7 @@ fun WorkoutSessionCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(14.dp)
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(

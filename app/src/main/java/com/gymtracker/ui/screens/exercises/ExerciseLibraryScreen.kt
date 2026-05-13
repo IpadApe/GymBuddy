@@ -1,6 +1,9 @@
 package com.gymtracker.ui.screens.exercises
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -11,6 +14,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -161,76 +167,97 @@ fun ExerciseLibraryScreen(
         )
 
         // Search
-        OutlinedTextField(
-            value = state.searchQuery,
-            onValueChange = viewModel::onSearchChanged,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            placeholder = { Text("Search exercises...") },
-            leadingIcon = { Text("🔍", fontSize = 16.sp) },
-            trailingIcon = {
-                if (state.searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { viewModel.onSearchChanged("") }) {
-                        Icon(Icons.Filled.Close, null)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.06f), Color.Transparent)
+                    )
+                )
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+        ) {
+            OutlinedTextField(
+                value = state.searchQuery,
+                onValueChange = viewModel::onSearchChanged,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Search exercises...") },
+                leadingIcon = { Text("🔍", fontSize = 16.sp) },
+                trailingIcon = {
+                    if (state.searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.onSearchChanged("") }) {
+                            Icon(Icons.Filled.Close, null)
+                        }
                     }
-                }
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
             )
-        )
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Muscle group filter chips (with "All" at start)
+        // Muscle group pill filter buttons (with "All" at start)
         LazyRow(
-            modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                FilterChip(
-                    selected = state.selectedMuscle == null,
-                    onClick = { viewModel.onMuscleFilter(null) },
-                    label = { Text("All", style = MaterialTheme.typography.labelSmall) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                        selectedLabelColor = MaterialTheme.colorScheme.primary
+                val isSelected = state.selectedMuscle == null
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                        .border(
+                            1.dp,
+                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                            RoundedCornerShape(12.dp)
+                        )
+                        .clickable { viewModel.onMuscleFilter(null) }
+                        .padding(horizontal = 20.dp, vertical = 10.dp)
+                ) {
+                    Text(
+                        "All",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                )
+                }
             }
             items(MuscleGroup.entries.toList()) { muscle ->
-                FilterChip(
-                    selected = state.selectedMuscle == muscle.displayName,
-                    onClick = { viewModel.onMuscleFilter(muscle.displayName) },
-                    label = { Text(muscle.displayName, style = MaterialTheme.typography.labelSmall) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = getMuscleColor(muscle.displayName).copy(alpha = 0.2f),
-                        selectedLabelColor = getMuscleColor(muscle.displayName)
+                val isSelected = state.selectedMuscle == muscle.displayName
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                        .border(
+                            1.dp,
+                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                            RoundedCornerShape(12.dp)
+                        )
+                        .clickable { viewModel.onMuscleFilter(muscle.displayName) }
+                        .padding(horizontal = 20.dp, vertical = 10.dp)
+                ) {
+                    Text(
+                        muscle.displayName,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Black,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Equipment filter chips
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(EquipmentType.entries.toList()) { equip ->
-                FilterChip(
-                    selected = state.selectedEquipment == equip.displayName,
-                    onClick = { viewModel.onEquipmentFilter(equip.displayName) },
-                    label = { Text(equip.displayName, style = MaterialTheme.typography.labelSmall) }
-                )
+                }
             }
         }
 

@@ -11,7 +11,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
+import androidx.compose.ui.draw.alpha
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -74,33 +76,29 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .background(
                         Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
-                                Color.Transparent
-                            )
+                            listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f), Color.Transparent)
                         )
                     )
-                    .padding(horizontal = 20.dp)
-                    .padding(top = 20.dp, bottom = 8.dp)
+                    .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 8.dp)
             ) {
                 Column {
                     Text(
-                        todayDate,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        letterSpacing = 1.5.sp
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        greeting,
+                        "Hi, athlete! 👋",
                         style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onBackground
                     )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        greeting,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
                     if (uiState.weeklySessionCount > 0) {
-                        Spacer(Modifier.height(6.dp))
+                        Spacer(Modifier.height(4.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("🔥", fontSize = 14.sp)
+                            Text("🔥", fontSize = 12.sp)
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 "${uiState.weeklySessionCount} workout${if (uiState.weeklySessionCount != 1) "s" else ""} this week",
@@ -139,36 +137,48 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.25f), MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
-                            )
-                        )
-                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f), RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(32.dp))
+                        .background(Brush.linearGradient(listOf(Color(0xFF4F46E5), Color(0xFF3730A3))))
+                        .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(32.dp))
                         .clickable { onResumeWorkout(activeWorkoutSessionId!!) }
-                        .padding(16.dp)
+                        .padding(24.dp)
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text("NOW ACTIVE", fontSize = 11.sp, fontWeight = FontWeight.Black,
+                                color = Color.White.copy(alpha = 0.8f), letterSpacing = 2.sp)
+                            Text("Workout in Progress",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Black, color = Color.White)
+                            Spacer(Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.2f))
+                                    .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(Color.White))
+                                Text(activeWorkoutSessionId.toString(), fontSize = 12.sp,
+                                    fontWeight = FontWeight.Black, color = Color.White)
+                            }
+                        }
                         Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                            modifier = Modifier.size(60.dp).clip(CircleShape).background(Color.White),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Filled.FitnessCenter, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Filled.PlayArrow, null, tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(28.dp))
                         }
-                        Spacer(Modifier.width(14.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text("Workout in Progress", fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
-                            Text("Tap to resume where you left off",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.primary)
                     }
+                    Text("💪", fontSize = 80.sp,
+                        modifier = Modifier.align(Alignment.BottomEnd).offset(x = 20.dp, y = 24.dp).alpha(0.1f))
                 }
             }
         }
@@ -194,36 +204,43 @@ fun HomeScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 letterSpacing = 2.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Black
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(200.dp)
                     .padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                WeekStatBox(
+                BentoLargeStatCard(
                     value = "${uiState.weeklySessionCount}",
+                    goalText = "/ 7",
                     label = "Workouts",
                     emoji = "🏋",
-                    accent = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier.weight(1f)
-                )
-                WeekStatBox(
-                    value = FormatUtils.formatVolume(uiState.weeklyVolume, uiState.useMetric),
-                    label = "Volume",
-                    emoji = "📈",
-                    accent = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.weight(1f)
-                )
-                WeekStatBox(
-                    value = if (uiState.avgDuration > 0) FormatUtils.formatDuration(uiState.avgDuration) else "--",
-                    label = "Avg Time",
-                    emoji = "⏱",
                     accent = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).fillMaxHeight()
                 )
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    BentoSmallStatCard(
+                        value = FormatUtils.formatVolume(uiState.weeklyVolume, uiState.useMetric),
+                        label = "Volume",
+                        accent = MaterialTheme.colorScheme.secondary,
+                        icon = Icons.AutoMirrored.Filled.TrendingUp,
+                        modifier = Modifier.weight(1f).fillMaxWidth()
+                    )
+                    BentoSmallStatCard(
+                        value = if (uiState.avgDuration > 0) FormatUtils.formatDuration(uiState.avgDuration) else "--",
+                        label = "Avg Time",
+                        accent = MaterialTheme.colorScheme.tertiary,
+                        icon = Icons.Filled.Timer,
+                        modifier = Modifier.weight(1f).fillMaxWidth()
+                    )
+                }
             }
         }
 
@@ -236,7 +253,7 @@ fun HomeScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 letterSpacing = 2.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Black
             )
             Spacer(Modifier.height(10.dp))
             Row(
@@ -291,7 +308,7 @@ fun HomeScreen(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     letterSpacing = 2.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Black
                 )
                 Spacer(Modifier.height(10.dp))
                 Box(
@@ -376,7 +393,7 @@ fun HomeScreen(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     letterSpacing = 2.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Black,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
@@ -429,11 +446,12 @@ fun HomeScreen(
 }
 
 // ─────────────────────────────────────────────────────────────────
-// WEEK STAT BOX
+// BENTO LARGE STAT CARD
 // ─────────────────────────────────────────────────────────────────
 @Composable
-fun WeekStatBox(
+fun BentoLargeStatCard(
     value: String,
+    goalText: String,
     label: String,
     emoji: String,
     accent: Color,
@@ -441,34 +459,64 @@ fun WeekStatBox(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(1.dp, accent.copy(alpha = 0.25f), RoundedCornerShape(16.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+            .padding(16.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
+            Column {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(accent.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) { Text(emoji, fontSize = 20.sp) }
+                Spacer(Modifier.height(8.dp))
+                Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 2.sp)
+            }
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(value, fontSize = 40.sp, fontWeight = FontWeight.Black, color = accent, lineHeight = 40.sp)
+                Spacer(Modifier.width(4.dp))
+                Text(goalText, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// BENTO SMALL STAT CARD
+// ─────────────────────────────────────────────────────────────────
+@Composable
+fun BentoSmallStatCard(
+    value: String,
+    label: String,
+    accent: Color,
+    icon: ImageVector,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f), RoundedCornerShape(20.dp))
             .padding(14.dp)
     ) {
-        Column {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(9.dp))
-                    .background(accent.copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(emoji, fontSize = 16.sp)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(label, fontSize = 10.sp, fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 2.sp)
+                Spacer(Modifier.height(4.dp))
+                Text(value, fontSize = 20.sp, fontWeight = FontWeight.Black, color = accent, letterSpacing = (-0.5).sp)
             }
-            Spacer(Modifier.height(10.dp))
-            Text(
-                value,
-                fontSize   = 18.sp,
-                fontWeight = FontWeight.Black,
-                color      = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                label,
-                fontSize = 10.sp,
-                color    = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Icon(icon, null, tint = accent.copy(alpha = 0.4f), modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -487,7 +535,7 @@ fun ExploreCard(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(24.dp))
             .background(gradient)
             .clickable(onClick = onClick)
             .padding(14.dp)
@@ -513,9 +561,9 @@ fun RecentWorkoutCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(20.dp))
     ) {
         // Left accent bar
         Box(
@@ -524,7 +572,7 @@ fun RecentWorkoutCard(
                 .fillMaxHeight()
                 .background(
                     Brush.verticalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)),
-                    RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
+                    RoundedCornerShape(topStart = 20.dp, bottomStart = 20.dp)
                 )
                 .align(Alignment.CenterStart)
         )

@@ -16,22 +16,22 @@ import androidx.core.view.WindowCompat
 // SHARED BACKGROUNDS (same across all themes)
 // ═══════════════════════════════════════════════════════════════
 
-val BgDeep           = Color(0xFF0C0C16)
-val SurfaceDark      = Color(0xFF131320)
-val CardDark         = Color(0xFF1F1F32)
-val OutlineDark      = Color(0xFF2A2A40)
+val BgDeep           = Color(0xFF0A0C10)
+val SurfaceDark      = Color(0xFF0D1117)
+val CardDark         = Color(0xFF161B22)
+val OutlineDark      = Color(0xFF1E293B)
 val OutlineLight     = Color(0xFFDDDDE8)
 
 val LightBackground  = Color(0xFFF5F5FA)
 val LightSurface     = Color(0xFFFFFFFF)
 val LightCard        = Color(0xFFEEEEF5)
 
-val TextPrimary      = Color(0xFFF0F0F8)
-val TextSecondary    = Color(0xFFAAABC0)
+val TextPrimary      = Color(0xFFE2E8F0)
+val TextSecondary    = Color(0xFF94A3B8)
 
-val SuccessGreen     = Color(0xFF26C6A6)
-val WarningOrange    = Color(0xFFFFB300)
-val ErrorRed         = Color(0xFFFF4757)
+val SuccessGreen     = Color(0xFF10B981)
+val WarningOrange    = Color(0xFFF59E0B)
+val ErrorRed         = Color(0xFFEF4444)
 
 // Muscle map — same across all themes
 val MuscleUndertrained  = Color(0xFF3A3A50)
@@ -60,6 +60,15 @@ enum class AppTheme(
     val lightPrimaryContainer: Color,
     val previewColor: Color
 ) {
+    INDIGO(
+        label = "Indigo",
+        darkPrimary          = Color(0xFF6366F1),
+        darkPrimaryLight     = Color(0xFF818CF8),
+        darkPrimaryContainer = Color(0xFF1E1B4B),
+        lightPrimary         = Color(0xFF4F46E5),
+        lightPrimaryContainer= Color(0xFFE0E7FF),
+        previewColor         = Color(0xFF6366F1)
+    ),
     ORANGE(
         label = "Orange",
         darkPrimary          = Color(0xFFFF6B35),
@@ -126,7 +135,7 @@ enum class AppTheme(
 
     companion object {
         fun fromString(name: String): AppTheme =
-            entries.firstOrNull { it.name == name } ?: ORANGE
+            entries.firstOrNull { it.name == name } ?: INDIGO
     }
 }
 
@@ -140,15 +149,15 @@ private fun buildDarkScheme(theme: AppTheme): ColorScheme = darkColorScheme(
     primaryContainer     = theme.darkPrimaryContainer,
     onPrimaryContainer   = theme.darkPrimaryLight,
 
-    secondary            = Color(0xFF4FC3F7),
-    onSecondary          = Color(0xFF002A3F),
-    secondaryContainer   = Color(0xFF00334D),
-    onSecondaryContainer = Color(0xFF4FC3F7),
+    secondary            = Color(0xFF38BDF8),
+    onSecondary          = Color(0xFF001E35),
+    secondaryContainer   = Color(0xFF0C2D4A),
+    onSecondaryContainer = Color(0xFF38BDF8),
 
-    tertiary             = Color(0xFF26C6A6),
-    onTertiary           = Color(0xFF00201A),
-    tertiaryContainer    = Color(0xFF00352C),
-    onTertiaryContainer  = Color(0xFF26C6A6),
+    tertiary             = Color(0xFF2DD4BF),
+    onTertiary           = Color(0xFF001A17),
+    tertiaryContainer    = Color(0xFF082924),
+    onTertiaryContainer  = Color(0xFF2DD4BF),
 
     background           = BgDeep,
     onBackground         = TextPrimary,
@@ -229,7 +238,7 @@ val GymTypography = Typography(
 @Composable
 fun GymTrackerTheme(
     darkTheme: Boolean = true,
-    appTheme: AppTheme = AppTheme.ORANGE,
+    appTheme: AppTheme = AppTheme.INDIGO,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) buildDarkScheme(appTheme) else buildLightScheme(appTheme)
