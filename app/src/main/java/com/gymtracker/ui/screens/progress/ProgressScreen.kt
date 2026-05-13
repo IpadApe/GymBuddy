@@ -1,7 +1,9 @@
 package com.gymtracker.ui.screens.progress
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -260,13 +262,13 @@ fun ProgressScreen(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(9.dp))
+                            .clip(RoundedCornerShape(10.dp))
                             .background(
                                 if (tab == selectedTab) MaterialTheme.colorScheme.primary
                                 else Color.Transparent
                             )
                             .clickable { selectedTab = tab }
-                            .padding(vertical = 7.dp),
+                            .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -317,7 +319,7 @@ fun ProgressScreen(
                     modifier = Modifier.padding(horizontal = 20.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                    letterSpacing = 2.sp, fontWeight = FontWeight.Black
                 )
                 Spacer(Modifier.height(8.dp))
                 Card(
@@ -403,7 +405,7 @@ fun ProgressScreen(
                         modifier = Modifier.padding(horizontal = 20.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                        letterSpacing = 2.sp, fontWeight = FontWeight.Black
                     )
                 }
                 items(state.overloadSuggestions.take(5)) { suggestion ->
@@ -432,7 +434,7 @@ fun ProgressScreen(
                         modifier = Modifier.padding(horizontal = 20.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                        letterSpacing = 2.sp, fontWeight = FontWeight.Black
                     )
                     Spacer(Modifier.height(8.dp))
                     Card(
@@ -454,7 +456,7 @@ fun ProgressScreen(
                     modifier = Modifier.padding(horizontal = 20.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                    letterSpacing = 2.sp, fontWeight = FontWeight.Black
                 )
             }
             if (completedSessions.isEmpty()) {
@@ -489,7 +491,7 @@ fun ProgressScreen(
                     modifier = Modifier.padding(horizontal = 20.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                    letterSpacing = 2.sp, fontWeight = FontWeight.Black
                 )
             }
             if (state.recentPRs.isEmpty()) {
@@ -500,12 +502,67 @@ fun ProgressScreen(
                         subtitle = "Complete workouts to set personal records"
                     )
                 }
+            } else {
+                item {
+                    val topPr = state.recentPRs.first()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(24.dp))
+                            .padding(20.dp)
+                    ) {
+                        Column {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text("🔥", fontSize = 24.sp)
+                                Text(
+                                    "NEW PERSONAL RECORD",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    letterSpacing = 2.sp
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                topPr.exerciseName,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    FormatUtils.formatWeight(topPr.value, state.useMetric),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Black,
+                                    color = WarningOrange
+                                )
+                            }
+                        }
+                    }
+                }
             }
             items(state.recentPRs) { pr ->
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                     colors = CardDefaults.cardColors(containerColor = WarningOrange.copy(alpha = 0.08f)),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(20.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(14.dp),
@@ -549,7 +606,7 @@ fun ProgressScreen(
                         "BODY MEASUREMENTS",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        letterSpacing = 2.sp, fontWeight = FontWeight.Bold
+                        letterSpacing = 2.sp, fontWeight = FontWeight.Black
                     )
                     TextButton(onClick = { viewModel.showMeasurementDialog() }) {
                         Text("+ Add", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
