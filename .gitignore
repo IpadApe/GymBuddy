@@ -15,3 +15,6 @@ local.properties
 
 # Signing — never commit secrets
 keystore.properties
+*.jks
+*.keystore
+/staystrong.jks
