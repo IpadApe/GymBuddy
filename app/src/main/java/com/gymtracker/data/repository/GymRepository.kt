@@ -715,7 +715,37 @@ class GymRepository(private val db: AppDatabase) {
             "Smith Machine Shrug",
             "Lever Shrug",
             "Barbell Rear Delt Raise",
-            "Bent Over Reverse Cable Fly"
+            "Bent Over Reverse Cable Fly",
+            // ── Boxing / combat sports ──
+            "Jab",
+            "Cross (Straight Right)",
+            "Lead Hook",
+            "Rear Hook",
+            "Lead Uppercut",
+            "Rear Uppercut",
+            "Lead Hook to Body",
+            "Overhand Right",
+            "Body Jab",
+            "Heavy Bag Straight Punches",
+            "Heavy Bag Combinations",
+            "Heavy Bag Body Work",
+            "Heavy Bag Uppercuts",
+            "Slip Drill",
+            "Bob and Weave",
+            "Pivot and Exit",
+            "Shadowboxing",
+            "Defensive Shoulder Roll",
+            "Speed Bag",
+            "Double-End Bag",
+            "Jump Rope (Basic)",
+            "Jump Rope (Double Unders)",
+            "Jump Rope (Boxer Step)",
+            "Maize Bag",
+            "Pad Work (Combinations)",
+            "Pad Work (Counter Punching)",
+            "Boxing Burpee",
+            "Plank with Punches",
+            "Medicine Ball Rotational Throw"
         )
         newNames.forEach { name ->
             if (db.exerciseDao().getExerciseByName(name) == null) {
@@ -728,43 +758,59 @@ class GymRepository(private val db: AppDatabase) {
     suspend fun seedRoutinesIfEmpty() {
         val existing = db.routineDao().getPrebuiltRoutines().first()
         if (existing.isEmpty()) {
-            val exercises = db.exerciseDao().getAllExercises().first()
-            val exerciseMap = exercises.associateBy { it.name }
-
+            val exerciseMap = db.exerciseDao().getAllExercises().first().associateBy { it.name }
             RoutineSeedData.templates.forEach { template ->
-                val routineId = db.routineDao().insertRoutine(
-                    RoutineEntity(
-                        name = template.name,
-                        description = template.description,
-                        daysPerWeek = template.daysPerWeek,
-                        goal = template.goal,
-                        isPrebuilt = true
-                    )
+                insertRoutineTemplate(template, exerciseMap)
+            }
+        }
+    }
+
+    /** Inserts prebuilt routines added in later versions that existing users don't have yet. */
+    suspend fun ensureNewRoutines() {
+        val existingNames = db.routineDao().getPrebuiltRoutines().first().map { it.name }.toSet()
+        val missing = RoutineSeedData.templates.filter { it.name !in existingNames }
+        if (missing.isEmpty()) return
+        val exerciseMap = db.exerciseDao().getAllExercises().first().associateBy { it.name }
+        missing.forEach { template ->
+            insertRoutineTemplate(template, exerciseMap)
+        }
+    }
+
+    private suspend fun insertRoutineTemplate(
+        template: RoutineSeedData.RoutineTemplate,
+        exerciseMap: Map<String, ExerciseEntity>
+    ) {
+        val routineId = db.routineDao().insertRoutine(
+            RoutineEntity(
+                name = template.name,
+                description = template.description,
+                daysPerWeek = template.daysPerWeek,
+                goal = template.goal,
+                isPrebuilt = true
+            )
+        )
+        template.days.forEachIndexed { index, dayTemplate ->
+            val dayId = db.routineDayDao().insertDay(
+                RoutineDayEntity(
+                    routineId = routineId,
+                    dayName = dayTemplate.name,
+                    dayOrder = index,
+                    splitType = dayTemplate.splitType
                 )
-                template.days.forEachIndexed { index, dayTemplate ->
-                    val dayId = db.routineDayDao().insertDay(
-                        RoutineDayEntity(
-                            routineId = routineId,
-                            dayName = dayTemplate.name,
-                            dayOrder = index,
-                            splitType = dayTemplate.splitType
+            )
+            dayTemplate.exercises.forEachIndexed { exIndex, exTemplate ->
+                val exerciseEntity = exerciseMap[exTemplate.exerciseName]
+                if (exerciseEntity != null) {
+                    db.routineDayExerciseDao().insertExercise(
+                        RoutineDayExerciseEntity(
+                            routineDayId = dayId,
+                            exerciseId = exerciseEntity.id,
+                            orderIndex = exIndex,
+                            targetSets = exTemplate.targetSets,
+                            targetReps = exTemplate.targetReps,
+                            restTimeSeconds = exTemplate.restSeconds
                         )
                     )
-                    dayTemplate.exercises.forEachIndexed { exIndex, exTemplate ->
-                        val exerciseEntity = exerciseMap[exTemplate.exerciseName]
-                        if (exerciseEntity != null) {
-                            db.routineDayExerciseDao().insertExercise(
-                                RoutineDayExerciseEntity(
-                                    routineDayId = dayId,
-                                    exerciseId = exerciseEntity.id,
-                                    orderIndex = exIndex,
-                                    targetSets = exTemplate.targetSets,
-                                    targetReps = exTemplate.targetReps,
-                                    restTimeSeconds = exTemplate.restSeconds
-                                )
-                            )
-                        }
-                    }
                 }
             }
         }

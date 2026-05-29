@@ -229,6 +229,159 @@ object RoutineSeedData {
                     ExerciseTemplate("Hanging Leg Raise", 3, "10-15", 60)
                 ))
             )
+        ),
+        RoutineTemplate(
+            name = "5/3/1 (Wendler)",
+            description = "4-day strength program built around the big compound lifts with progressive overload across cycles. Best for intermediate to advanced lifters.",
+            daysPerWeek = 4,
+            goal = "Strength",
+            days = listOf(
+                DayTemplate("Overhead Press Day", "Push", listOf(
+                    ExerciseTemplate("Overhead Press", 3, "5/3/1", 180),
+                    ExerciseTemplate("Dumbbell Bench Press", 3, "10", 90),
+                    ExerciseTemplate("Dumbbell Row", 3, "10", 90),
+                    ExerciseTemplate("Lateral Raise", 3, "15", 60),
+                    ExerciseTemplate("Face Pull", 3, "15", 60)
+                )),
+                DayTemplate("Deadlift Day", "Pull", listOf(
+                    ExerciseTemplate("Barbell Deadlift", 3, "5/3/1", 240),
+                    ExerciseTemplate("Barbell Back Squat", 3, "10", 120),
+                    ExerciseTemplate("Leg Press", 3, "10", 90),
+                    ExerciseTemplate("Lying Leg Curl", 3, "10", 60),
+                    ExerciseTemplate("Plank", 3, "60s", 60)
+                )),
+                DayTemplate("Bench Day", "Push", listOf(
+                    ExerciseTemplate("Barbell Bench Press", 3, "5/3/1", 180),
+                    ExerciseTemplate("Dumbbell Shoulder Press", 3, "10", 90),
+                    ExerciseTemplate("Dumbbell Row", 3, "10", 90),
+                    ExerciseTemplate("Tricep Pushdown", 3, "12", 60),
+                    ExerciseTemplate("Barbell Curl", 3, "10", 60)
+                )),
+                DayTemplate("Squat Day", "Legs", listOf(
+                    ExerciseTemplate("Barbell Back Squat", 3, "5/3/1", 240),
+                    ExerciseTemplate("Romanian Deadlift", 3, "10", 120),
+                    ExerciseTemplate("Leg Press", 3, "10", 90),
+                    ExerciseTemplate("Leg Extension", 3, "15", 60),
+                    ExerciseTemplate("Standing Calf Raise", 4, "15", 60)
+                ))
+            )
+        ),
+        RoutineTemplate(
+            name = "Starting Strength",
+            description = "3-day full body linear progression for beginners. Squat every session and add weight each workout to build foundational strength fast.",
+            daysPerWeek = 3,
+            goal = "Strength",
+            days = listOf(
+                DayTemplate("Workout A", "Full Body", listOf(
+                    ExerciseTemplate("Barbell Back Squat", 3, "5", 180),
+                    ExerciseTemplate("Barbell Bench Press", 3, "5", 180),
+                    ExerciseTemplate("Barbell Deadlift", 1, "5", 240)
+                )),
+                DayTemplate("Workout B", "Full Body", listOf(
+                    ExerciseTemplate("Barbell Back Squat", 3, "5", 180),
+                    ExerciseTemplate("Overhead Press", 3, "5", 180),
+                    ExerciseTemplate("Barbell Deadlift", 1, "5", 240)
+                )),
+                DayTemplate("Workout A (repeat)", "Full Body", listOf(
+                    ExerciseTemplate("Barbell Back Squat", 3, "5", 180),
+                    ExerciseTemplate("Barbell Bench Press", 3, "5", 180),
+                    ExerciseTemplate("Barbell Deadlift", 1, "5", 240)
+                ))
+            )
+        ),
+        RoutineTemplate(
+            name = "GZCLP",
+            description = "4-day linear progression using a tier system: heavy main lifts, moderate secondary lifts, and high-rep accessories. Great for early intermediate lifters.",
+            daysPerWeek = 4,
+            goal = "Strength",
+            days = listOf(
+                DayTemplate("Day 1", "Full Body", listOf(
+                    ExerciseTemplate("Barbell Back Squat", 5, "3", 180),
+                    ExerciseTemplate("Barbell Bench Press", 6, "10", 90),
+                    ExerciseTemplate("Lat Pulldown", 3, "15", 60)
+                )),
+                DayTemplate("Day 2", "Full Body", listOf(
+                    ExerciseTemplate("Overhead Press", 5, "3", 180),
+                    ExerciseTemplate("Barbell Deadlift", 6, "10", 120),
+                    ExerciseTemplate("Dumbbell Row", 3, "15", 60)
+                )),
+                DayTemplate("Day 3", "Full Body", listOf(
+                    ExerciseTemplate("Barbell Back Squat", 6, "10", 120),
+                    ExerciseTemplate("Barbell Bench Press", 5, "3", 180),
+                    ExerciseTemplate("Lat Pulldown", 3, "15", 60)
+                )),
+                DayTemplate("Day 4", "Full Body", listOf(
+                    ExerciseTemplate("Barbell Deadlift", 5, "3", 240),
+                    ExerciseTemplate("Overhead Press", 6, "10", 90),
+                    ExerciseTemplate("Dumbbell Row", 3, "15", 60)
+                ))
+            )
+        ),
+        RoutineTemplate(
+            name = "Boxing Beginner",
+            description = "3-day introduction to boxing fundamentals: footwork, the core punches, and basic defense. Build technique and conditioning with no sparring required.",
+            daysPerWeek = 3,
+            goal = "Endurance",
+            days = listOf(
+                DayTemplate("Fundamentals", "Full Body", listOf(
+                    ExerciseTemplate("Jump Rope (Basic)", 3, "3 min", 60),
+                    ExerciseTemplate("Shadowboxing", 4, "3 min", 60),
+                    ExerciseTemplate("Jab", 3, "20", 45),
+                    ExerciseTemplate("Cross (Straight Right)", 3, "20", 45),
+                    ExerciseTemplate("Plank", 3, "45s", 45)
+                )),
+                DayTemplate("Bag Work", "Full Body", listOf(
+                    ExerciseTemplate("Jump Rope (Basic)", 3, "3 min", 60),
+                    ExerciseTemplate("Heavy Bag Straight Punches", 4, "3 min", 60),
+                    ExerciseTemplate("Heavy Bag Combinations", 3, "3 min", 60),
+                    ExerciseTemplate("Boxing Burpee", 3, "10", 60),
+                    ExerciseTemplate("Plank with Punches", 3, "10", 45)
+                )),
+                DayTemplate("Defense & Footwork", "Full Body", listOf(
+                    ExerciseTemplate("Jump Rope (Boxer Step)", 3, "3 min", 60),
+                    ExerciseTemplate("Slip Drill", 3, "2 min", 45),
+                    ExerciseTemplate("Bob and Weave", 3, "2 min", 45),
+                    ExerciseTemplate("Shadowboxing", 4, "3 min", 60),
+                    ExerciseTemplate("Medicine Ball Rotational Throw", 3, "10", 60)
+                ))
+            )
+        ),
+        RoutineTemplate(
+            name = "Boxing Conditioning",
+            description = "4-day conditioning program for boxers and combat athletes built around 3-minute rounds. Develops cardio base, punching endurance, power, and footwork.",
+            daysPerWeek = 4,
+            goal = "Endurance",
+            days = listOf(
+                DayTemplate("Technical Bag Work", "Full Body", listOf(
+                    ExerciseTemplate("Jump Rope (Basic)", 5, "3 min", 60),
+                    ExerciseTemplate("Shadowboxing", 4, "3 min", 60),
+                    ExerciseTemplate("Heavy Bag Straight Punches", 3, "3 min", 60),
+                    ExerciseTemplate("Heavy Bag Combinations", 3, "3 min", 60),
+                    ExerciseTemplate("Double-End Bag", 2, "2 min", 60)
+                )),
+                DayTemplate("Strength & Power", "Full Body", listOf(
+                    ExerciseTemplate("Medicine Ball Rotational Throw", 4, "10", 60),
+                    ExerciseTemplate("Barbell Deadlift", 4, "5", 180),
+                    ExerciseTemplate("Overhead Press", 3, "6-8", 120),
+                    ExerciseTemplate("Pull-Ups", 3, "max", 90),
+                    ExerciseTemplate("Plank with Punches", 3, "10", 60),
+                    ExerciseTemplate("Boxing Burpee", 3, "10", 60)
+                )),
+                DayTemplate("Pad Work & Speed", "Full Body", listOf(
+                    ExerciseTemplate("Jump Rope (Boxer Step)", 4, "3 min", 60),
+                    ExerciseTemplate("Pad Work (Combinations)", 5, "3 min", 60),
+                    ExerciseTemplate("Speed Bag", 4, "3 min", 60),
+                    ExerciseTemplate("Slip Drill", 3, "2 min", 60),
+                    ExerciseTemplate("Maize Bag", 3, "2 min", 60)
+                )),
+                DayTemplate("Conditioning Circuits", "Full Body", listOf(
+                    ExerciseTemplate("Jump Rope (Double Unders)", 5, "30s", 30),
+                    ExerciseTemplate("Heavy Bag Body Work", 4, "3 min", 60),
+                    ExerciseTemplate("Bob and Weave", 3, "2 min", 45),
+                    ExerciseTemplate("Boxing Burpee", 4, "10", 60),
+                    ExerciseTemplate("Shadowboxing", 3, "3 min", 60)
+                ))
+            )
         )
     )
 }

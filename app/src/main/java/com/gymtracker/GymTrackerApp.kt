@@ -96,6 +96,7 @@ class GymTrackerApp : Application() {
             repository.seedExercisesIfEmpty()
             repository.ensureNewExercises()
             repository.seedRoutinesIfEmpty()
+            repository.ensureNewRoutines()
         }
     }
 

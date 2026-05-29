@@ -44,6 +44,13 @@ enum class EquipmentType(val displayName: String) {
     BANDS("Resistance Bands"),
     EZ_BAR("EZ Bar"),
     SMITH_MACHINE("Smith Machine"),
+    // Boxing / combat sports equipment
+    HEAVY_BAG("Heavy Bag"),
+    SPEED_BAG("Speed Bag"),
+    DOUBLE_END_BAG("Double-End Bag"),
+    BOXING_MITTS("Boxing Mitts"),
+    JUMP_ROPE("Jump Rope"),
+    MAIZE_BAG("Maize Bag"),
     OTHER("Other")
 }
 
@@ -54,7 +61,10 @@ enum class MovementType(val displayName: String) {
     SQUAT("Squat"),
     CARRY("Carry"),
     ISOLATION("Isolation"),
-    CARDIO("Cardio")
+    CARDIO("Cardio"),
+    // Boxing / combat sports movement patterns
+    STRIKE("Strike"),
+    FOOTWORK("Footwork")
 }
 
 enum class Difficulty(val displayName: String) {

@@ -695,6 +695,72 @@ object ExerciseSeedData {
             "1. Lie face down on incline bench, hold barbell below.\n2. Raise bar out to sides, elbows slightly bent.\n3. Squeeze rear delts and traps at top.\n4. Lower slowly."))
         add(exercise("Bent Over Reverse Cable Fly", "Traps", "Shoulders", "Cable", "Isolation", "Beginner",
             "1. Set cables at low position, cross arms to grab opposite handles.\n2. Hinge forward, raise arms out to sides uncrossing them.\n3. Squeeze rear delts at top.\n4. Return slowly."))
+
+        // ═══════════════════════ BOXING / COMBAT SPORTS ═══════════════════════
+        // ── Punches ──
+        add(exercise("Jab", "Shoulders", "Chest,Triceps,Abs/Core", "Boxing Mitts", "Strike", "Beginner",
+            "1. Stand in orthodox or southpaw stance, guard up.\n2. Extend lead hand straight forward, rotating fist to palm-down at full extension.\n3. Snap hand back to guard immediately — speed over power.\n4. Keep rear hand up at all times. The jab is your range-finder and setup punch."))
+        add(exercise("Cross (Straight Right)", "Shoulders", "Chest,Triceps,Abs/Core,Glutes", "Boxing Mitts", "Strike", "Beginner",
+            "1. From boxing stance, pivot rear foot and rotate hips explosively forward.\n2. Drive rear hand straight to target as hip rotation transfers weight to front foot.\n3. Rotate fist to palm-down at contact — full hip and shoulder behind it.\n4. Return hand to guard; do not drop lead hand. Power comes from the ground up, not the arm."))
+        add(exercise("Lead Hook", "Shoulders", "Abs/Core,Chest,Back", "Boxing Mitts", "Strike", "Intermediate",
+            "1. From stance, pivot on lead foot, rotating hips and shoulders.\n2. Swing lead arm in a horizontal arc at 90-degree elbow bend, targeting temple or chin.\n3. Keep fist horizontal (palm down) or vertical depending on range.\n4. Return to guard with hip counter-rotation. Do not wind up before throwing."))
+        add(exercise("Rear Hook", "Shoulders", "Abs/Core,Chest,Back", "Boxing Mitts", "Strike", "Intermediate",
+            "1. Pivot rear foot as hip drives the rear arm in a horizontal arc.\n2. Elbow stays at 90 degrees, knuckles target opponent's chin or temple.\n3. Rotate torso fully — ear nearly touches lead shoulder at contact.\n4. Snap back to guard. The rear hook is a counter-punch or finisher after a jab-cross."))
+        add(exercise("Lead Uppercut", "Shoulders", "Biceps,Abs/Core", "Boxing Mitts", "Strike", "Intermediate",
+            "1. Dip lead shoulder slightly by bending at knees, not waist.\n2. Drive lead fist upward in a scooping motion, palm facing you at contact.\n3. Rotate hips and push off rear foot to add power.\n4. Return to guard immediately. Targets chin or body; sets up hooks."))
+        add(exercise("Rear Uppercut", "Shoulders", "Biceps,Abs/Core,Glutes", "Boxing Mitts", "Strike", "Intermediate",
+            "1. Dip rear shoulder with slight knee bend.\n2. Pivot rear foot and rotate hip upward, driving rear fist in an upward arc.\n3. Palm faces toward you at contact, targeting chin.\n4. Snap back to guard. The rear uppercut is powerful but telegraphic — set it up with the jab."))
+        add(exercise("Lead Hook to Body", "Abs/Core", "Shoulders,Chest", "Boxing Mitts", "Strike", "Intermediate",
+            "1. Bend knees to drop level — crouch with body, not just the arm.\n2. Drive lead hook downward, targeting ribs or solar plexus with a horizontal arc.\n3. Keep chin tucked and rear hand protecting jaw during the bend.\n4. Explode back up to guard. Level change is the key — don't telegraph by dipping early."))
+        add(exercise("Overhand Right", "Shoulders", "Abs/Core,Chest", "Boxing Mitts", "Strike", "Advanced",
+            "1. Load weight onto rear foot with slight outside pivot.\n2. Drive rear fist in a looping arc over opponent's guard, targeting temple or top of head.\n3. Hip rotation is full — similar to cross but with more downward arc at end.\n4. Return guard quickly as you exit range. High risk if blocked — use as surprise counter."))
+        add(exercise("Body Jab", "Abs/Core", "Shoulders,Triceps", "Boxing Mitts", "Strike", "Intermediate",
+            "1. Feint high with guard, then dip lead shoulder and target midsection.\n2. Extend lead hand straight to body — keep rear hand guard high.\n3. Snap back immediately — you're exposed at body level.\n4. Follow with lead hook upstairs to catch opponent as they lower guard."))
+        // ── Heavy bag work ──
+        add(exercise("Heavy Bag Straight Punches", "Shoulders", "Chest,Triceps,Abs/Core", "Heavy Bag", "Strike", "Beginner",
+            "1. Stand at arm's length from bag, boxing stance.\n2. Throw alternating jab-cross combinations, focusing on snapping punches back.\n3. Move laterally between combinations — don't stand flat-footed.\n4. Drill for rounds (2-3 min). Heavy bag builds power; speed bag builds rhythm."))
+        add(exercise("Heavy Bag Combinations", "Shoulders", "Chest,Abs/Core,Back,Triceps", "Heavy Bag", "Strike", "Intermediate",
+            "1. Drill preset combos: e.g. jab-cross-hook (1-2-3), jab-cross-body-hook-cross.\n2. Move around bag between combos — circle, slip, then re-engage.\n3. Vary power: sharp fast combo, then hard power shot, then back to speed.\n4. Work 3x3-minute rounds with 1 min rest. Track rounds, not reps."))
+        add(exercise("Heavy Bag Body Work", "Abs/Core", "Shoulders,Back", "Heavy Bag", "Strike", "Intermediate",
+            "1. Crouch to bag's body height — punch to midsection only this round.\n2. Throw hooks and straights to the body, level-changing with each combo.\n3. Keep guard high even when punching low — body shots leave you open to counters.\n4. 2-3 minute rounds. Body work builds digging habits and core conditioning."))
+        add(exercise("Heavy Bag Uppercuts", "Shoulders", "Biceps,Abs/Core", "Heavy Bag", "Strike", "Intermediate",
+            "1. Get close to bag (inside range), almost touching.\n2. Throw short uppercuts upward into bag's underside, alternating hands.\n3. Drive from legs and hips — uppercuts are not arm punches.\n4. Combine with hooks: uppercut-uppercut-hook-hook in tight rapid sequence."))
+        // ── Defense / footwork ──
+        add(exercise("Slip Drill", "Abs/Core", "Back,Shoulders", "Bodyweight", "Footwork", "Intermediate",
+            "1. From boxing stance, bend at waist and knees to move head outside lead shoulder (slip outside).\n2. Return to center, then slip to the other side (slip inside).\n3. Keep hips low, guard up — head moves, feet stay planted.\n4. Drill to rhythm: slip-slip or add counter punch after each slip. Avoids straight punches."))
+        add(exercise("Bob and Weave", "Abs/Core", "Quads,Glutes,Back", "Bodyweight", "Footwork", "Intermediate",
+            "1. From stance, bend knees to dip under an imaginary punch, then rise on the other side.\n2. Movement is U-shaped: down-across-up, not just side to side.\n3. Keep guard up throughout — chin tucked into lead shoulder.\n4. Drill continuously for 30-60 seconds. Follow each weave with a hook counter."))
+        add(exercise("Pivot and Exit", "Abs/Core", "Quads,Calves", "Bodyweight", "Footwork", "Intermediate",
+            "1. As opponent throws, step to the outside of their lead foot.\n2. Pivot on lead foot 90 degrees, redirecting your angle.\n3. You are now at a safe angle with clear path to their open side.\n4. Throw your counter then exit range. Pivoting off the centerline is fundamental defensive boxing."))
+        add(exercise("Shadowboxing", "Shoulders", "Abs/Core,Quads,Calves,Back", "Bodyweight", "Strike", "Beginner",
+            "1. Stand in boxing stance with no equipment needed — imagine an opponent.\n2. Throw punches, move feet, slip, weave, pivot — practice full offense and defense.\n3. Work in rounds: 3 min work, 1 min rest. Stay constantly moving.\n4. Vary pace: 30 sec slow technique, 30 sec fast, 30 sec all-out. Best drill for conditioning and technique simultaneously."))
+        add(exercise("Defensive Shoulder Roll", "Shoulders", "Abs/Core", "Bodyweight", "Footwork", "Advanced",
+            "1. Turn lead shoulder and dip lead side — the shoulder rolls in front of chin.\n2. Rear hand guards opposite cheek; lead arm is bent, elbow down.\n3. Slip the punch over the lead shoulder, then pivot and counter.\n4. The Philly Shell / shoulder roll — primarily a counter-fighting defense."))
+        // ── Conditioning: bag & rope ──
+        add(exercise("Speed Bag", "Shoulders", "Forearms,Triceps", "Speed Bag", "Strike", "Intermediate",
+            "1. Stand at speed bag with eye level at bag bottom.\n2. Strike bag with alternating lead-rear fists in a circular motion — bag bounces off platform.\n3. Rhythm: hit-and-let-rebound-twice before hitting again (for beginners).\n4. Build to continuous alternating strikes. Speed bag trains rhythm, shoulder endurance, hand-eye coordination."))
+        add(exercise("Double-End Bag", "Shoulders", "Abs/Core,Forearms", "Double-End Bag", "Strike", "Advanced",
+            "1. The double-end bag is anchored top and bottom — it swings back after each hit.\n2. Jab to set the bag moving, then time counters as it returns.\n3. Practice combinations: jab-cross as bag comes back, slip as it fires away.\n4. Forces head movement and counter-punching timing. Best accuracy trainer."))
+        add(exercise("Jump Rope (Basic)", "Calves", "Shoulders,Abs/Core,Quads", "Jump Rope", "Cardio", "Beginner",
+            "1. Hold handles at hip level, rope behind feet.\n2. Swing rope overhead with wrist rotation (not shoulders) and jump just high enough to clear.\n3. Land softly on balls of feet — not heels.\n4. Start with 30-second intervals; build to 3-minute rounds matching boxing round length."))
+        add(exercise("Jump Rope (Double Unders)", "Calves", "Shoulders,Abs/Core", "Jump Rope", "Cardio", "Advanced",
+            "1. Execute a standard jump, but at peak height swing rope twice under feet.\n2. Requires faster wrist rotation and slightly higher jump.\n3. Keep core braced — double unders demand more total-body tension.\n4. Work in sets of 10 doubles; build to 50+ consecutive. High intensity in short bursts."))
+        add(exercise("Jump Rope (Boxer Step)", "Calves", "Shoulders,Abs/Core,Quads", "Jump Rope", "Cardio", "Intermediate",
+            "1. Instead of jumping on both feet, alternate weight side to side — simulating boxing footwork.\n2. Shift weight to lead foot on one rotation, rear foot on next.\n3. Adds lateral movement pattern to jump rope conditioning.\n4. Do this for 2-3 minute rounds between bag rounds."))
+        add(exercise("Maize Bag", "Shoulders", "Abs/Core,Back,Quads", "Maize Bag", "Strike", "Intermediate",
+            "1. Maize bag hangs at head height and swings wildly — trains head movement not power.\n2. Push bag away gently, then practice slipping and weaving as it returns.\n3. Throw short sharp counter punches as it swings.\n4. Do NOT punch hard — it's a defense and timing tool, not a power trainer."))
+        // ── Pad work ──
+        add(exercise("Pad Work (Combinations)", "Shoulders", "Abs/Core,Chest,Back,Triceps", "Boxing Mitts", "Strike", "Beginner",
+            "1. Partner holds mitts at head height; feeder calls or signals combo.\n2. Throw combinations (1, 1-2, 1-2-3, 1-2-3-2) with full technique.\n3. Reset guard between each combo — do not drop hands while waiting.\n4. Feeder gives realistic targets and offers light return for defense practice."))
+        add(exercise("Pad Work (Counter Punching)", "Shoulders", "Abs/Core,Back", "Boxing Mitts", "Strike", "Advanced",
+            "1. Feeder throws slow punch; worker slips or blocks then fires counter combo.\n2. Trains reactive punching — punching after seeing an incoming shot.\n3. Keep combos short (1-3 punches) after the slip, then reset.\n4. Gradually increase feeder speed. Counter punching is the highest boxing skill."))
+        // ── Boxing fitness ──
+        add(exercise("Boxing Burpee", "Abs/Core", "Chest,Shoulders,Quads,Glutes", "Bodyweight", "Strike", "Intermediate",
+            "1. From standing, drop to push-up position and do one push-up.\n2. Jump feet to hands, explode upward.\n3. At peak jump, throw a jab-cross combo with full rotation.\n4. Land, repeat. Combines full-body conditioning with punching mechanics."))
+        add(exercise("Plank with Punches", "Abs/Core", "Shoulders,Chest", "Bodyweight", "Strike", "Intermediate",
+            "1. Start in high plank (push-up position).\n2. With one hand on ground for balance, extend opposite arm forward as if throwing a jab.\n3. Return and alternate sides — do not rotate hips.\n4. 10-15 reps per side. Builds rotational core stability needed for punching."))
+        add(exercise("Medicine Ball Rotational Throw", "Abs/Core", "Shoulders,Back,Glutes", "Other", "Strike", "Intermediate",
+            "1. Stand side-on to a wall, hold medicine ball at hip.\n2. Rotate explosively and throw ball into wall off the rotation.\n3. Catch rebound and rotate back to start.\n4. Trains the rotational power chain used in hooks and crosses. 3x10 each side."))
     }
 
     private fun exercise(
