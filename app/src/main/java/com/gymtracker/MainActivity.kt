@@ -7,17 +7,16 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.gymtracker.ui.navigation.MainNavigation
 import com.gymtracker.ui.theme.AppTheme
 import com.gymtracker.ui.theme.GymTrackerTheme
 
-class MainActivity : ComponentActivity() {
+private const val REQ_NOTIFICATIONS = 1001
 
-    private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* result ignored */ }
+class MainActivity : ComponentActivity() {
 
     /** Android 13+ silently drops notifications unless POST_NOTIFICATIONS is granted at runtime. */
     private fun ensureNotificationPermission() {
@@ -26,7 +25,9 @@ class MainActivity : ComponentActivity() {
                 this, Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
             if (!granted) {
-                requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                ActivityCompat.requestPermissions(
+                    this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_NOTIFICATIONS
+                )
             }
         }
     }
