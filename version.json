@@ -1,7 +1,7 @@
 {
-  "versionCode": 11,
-  "versionName": "1.10.0",
-  "releaseNotes": "security: stop tracking signing keystore and ignore all keystores\n\nstaystrong.jks must never live in version control. Removed from tracking and\nadded *.jks/*.keystore to .gitignore. History purge follows in the same push.\n\nCo-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>",
-  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.10.0/staystrong-1.10.0.apk",
+  "versionCode": 12,
+  "versionName": "1.11.0",
+  "releaseNotes": "fix: use ActivityCompat.requestPermissions to pass lintVitalRelease\n\nregisterForActivityResult triggered InvalidFragmentVersionForActivityResult\n(fatal in lintVitalRelease), failing the release build. Switched to\nActivityCompat.requestPermissions \u2014 same effect, no fragment dependency, no lint error.\n\nCo-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>",
+  "downloadUrl": "https://github.com/IpadApe/GymBuddy/releases/download/v1.11.0/staystrong-1.11.0.apk",
   "mandatory": false
 }
