@@ -761,6 +761,46 @@ object ExerciseSeedData {
             "1. Start in high plank (push-up position).\n2. With one hand on ground for balance, extend opposite arm forward as if throwing a jab.\n3. Return and alternate sides — do not rotate hips.\n4. 10-15 reps per side. Builds rotational core stability needed for punching."))
         add(exercise("Medicine Ball Rotational Throw", "Abs/Core", "Shoulders,Back,Glutes", "Other", "Strike", "Intermediate",
             "1. Stand side-on to a wall, hold medicine ball at hip.\n2. Rotate explosively and throw ball into wall off the rotation.\n3. Catch rebound and rotate back to start.\n4. Trains the rotational power chain used in hooks and crosses. 3x10 each side."))
+
+        // ═══════════════════════ CARDIO ═══════════════════════
+        add(exercise("Treadmill Running", "Cardio", "Quads,Hamstrings,Calves", "Machine", "Cardio", "Beginner",
+            "1. Set a comfortable pace and incline.\n2. Maintain upright posture, relaxed shoulders.\n3. Land midfoot, keep stride natural.\n4. Run for time or intervals; cool down with a walk."))
+        add(exercise("Elliptical Trainer", "Cardio", "Quads,Glutes,Hamstrings", "Machine", "Cardio", "Beginner",
+            "1. Step on pedals, grip moving handles.\n2. Push and pull in a smooth striding motion.\n3. Keep core engaged, posture tall.\n4. Adjust resistance/incline for intensity."))
+        add(exercise("Jumping Jacks", "Cardio", "Calves,Shoulders", "Bodyweight", "Cardio", "Beginner",
+            "1. Stand with feet together, arms at sides.\n2. Jump feet wide while raising arms overhead.\n3. Jump back to start.\n4. Keep a steady rhythm for conditioning."))
+        add(exercise("High Knees", "Cardio", "Quads,Abs/Core,Calves", "Bodyweight", "Cardio", "Beginner",
+            "1. Stand tall, run in place.\n2. Drive knees up to hip height rapidly.\n3. Pump arms in sync.\n4. Stay on the balls of your feet; go for time."))
+
+        // ═══════════════════════ OLYMPIC LIFTS ═══════════════════════
+        add(exercise("Clean and Jerk", "Quads", "Glutes,Back,Shoulders,Traps", "Barbell", "Pull", "Advanced",
+            "1. Pull bar explosively from floor to front-rack (the clean).\n2. Dip and drive the bar overhead, splitting feet (the jerk).\n3. Lock arms overhead, recover feet to center.\n4. A full-body power lift — master technique with light loads first."))
+        add(exercise("Snatch", "Quads", "Glutes,Back,Shoulders,Traps", "Barbell", "Pull", "Advanced",
+            "1. Grip bar wide, pull explosively from floor.\n2. Pull under and catch bar overhead in one motion, squatting.\n3. Stand to full extension with bar locked out overhead.\n4. The most technical Olympic lift — coach-guided practice recommended."))
+        add(exercise("Hang Clean", "Traps", "Quads,Glutes,Back,Shoulders", "Barbell", "Pull", "Advanced",
+            "1. Start with bar at hip/thigh (the hang).\n2. Explosively extend hips and shrug, pulling bar up.\n3. Drop under into a front-rack catch.\n4. Stand to finish. Builds explosive power without floor pull."))
+        add(exercise("Push Jerk", "Shoulders", "Triceps,Quads,Glutes", "Barbell", "Push", "Advanced",
+            "1. Start with bar in front rack.\n2. Dip at the knees, then drive bar overhead explosively.\n3. Drop slightly under to receive, locking arms.\n4. Stand to full extension. Trains overhead power."))
+        add(exercise("Hang Snatch", "Traps", "Quads,Glutes,Back,Shoulders", "Barbell", "Pull", "Advanced",
+            "1. Hold bar wide-grip at the hang position.\n2. Explosively extend hips and pull bar overhead.\n3. Catch overhead in a partial squat.\n4. Stand to lockout. A power variation of the snatch."))
+        add(exercise("Clean Pull", "Traps", "Back,Glutes,Hamstrings", "Barbell", "Pull", "Intermediate",
+            "1. Set up as for a clean, bar over midfoot.\n2. Pull bar explosively to upper-thigh with a strong shrug.\n3. Stay over the bar, finish on toes.\n4. No catch — builds the pull strength for cleans."))
+
+        // ═══════════════════════ PLYOMETRIC / POWER ═══════════════════════
+        add(exercise("Box Jump", "Quads", "Glutes,Calves,Hamstrings", "Other", "Squat", "Intermediate",
+            "1. Stand facing a sturdy box, feet shoulder-width.\n2. Dip and swing arms, jump onto box landing softly.\n3. Stand fully on top.\n4. Step down (don't jump down) and repeat. Builds explosive power."))
+        add(exercise("Broad Jump", "Quads", "Glutes,Hamstrings,Calves", "Bodyweight", "Squat", "Intermediate",
+            "1. Stand with feet hip-width.\n2. Hinge, swing arms back, then jump forward as far as possible.\n3. Land softly with bent knees.\n4. Reset and repeat. Trains horizontal power."))
+        add(exercise("Step-Up", "Quads", "Glutes,Hamstrings", "Dumbbell", "Squat", "Beginner",
+            "1. Face a bench/box, hold dumbbells at sides.\n2. Step one foot up and drive through the heel to stand.\n3. Lower under control.\n4. Alternate legs or complete all reps per side."))
+        add(exercise("Wall Ball", "Quads", "Glutes,Shoulders,Abs/Core", "Other", "Squat", "Intermediate",
+            "1. Hold a medicine ball at chest, face a wall.\n2. Squat down, then explode up throwing ball to a high target.\n3. Catch on the way down into the next squat.\n4. Continuous reps — a brutal conditioning movement."))
+
+        // ═══════════════════════ STRONGMAN ═══════════════════════
+        add(exercise("Tire Flip", "Glutes", "Hamstrings,Back,Quads,Shoulders", "Other", "Hinge", "Advanced",
+            "1. Squat down to a large tire, hands under the edge.\n2. Drive with legs and hips, lifting and pushing forward.\n3. Once past vertical, push it over.\n4. Reset and repeat. Full-body explosive strength."))
+        add(exercise("Atlas Stone Lift", "Back", "Glutes,Hamstrings,Biceps,Quads", "Other", "Hinge", "Advanced",
+            "1. Straddle the stone, wrap arms underneath.\n2. Deadlift it to the lap, then re-grip high.\n3. Extend hips to stand and lift to platform or shoulder.\n4. Classic strongman lift — protect your back with a tight position."))
     }
 
     private fun exercise(

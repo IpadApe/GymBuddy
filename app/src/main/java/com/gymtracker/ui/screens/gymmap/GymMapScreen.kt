@@ -36,6 +36,8 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
@@ -107,10 +109,12 @@ class GymMapViewModel(private val context: Context) : ViewModel() {
     private var gpsLat = 0.0
     private var gpsLng = 0.0
 
+    // Shorter timeouts so a slow/stuck Overpass server fails fast and we move to the next one,
+    // instead of the user staring at "Finding nearby gyms…" for over a minute.
     private val httpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(35, TimeUnit.SECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .writeTimeout(10, TimeUnit.SECONDS)
         .build()
 
     private val overpassServers = listOf(
@@ -127,12 +131,18 @@ class GymMapViewModel(private val context: Context) : ViewModel() {
             _uiState.value = GymMapUiState.Loading
             try {
                 val fused = LocationServices.getFusedLocationProviderClient(context)
-                val loc = fused.lastLocation.await() ?: run {
-                    _uiState.value = GymMapUiState.Error(
-                        "Could not get your current location.\nMake sure GPS is enabled and try again."
-                    )
-                    return@launch
-                }
+                // lastLocation is null on a fresh boot / emulator; fall back to an active fix.
+                val loc = fused.lastLocation.await()
+                    ?: fused.getCurrentLocation(
+                        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                        CancellationTokenSource().token
+                    ).await()
+                    ?: run {
+                        _uiState.value = GymMapUiState.Error(
+                            "Could not get your current location.\nMake sure GPS is enabled and try again."
+                        )
+                        return@launch
+                    }
                 gpsLat = loc.latitude
                 gpsLng = loc.longitude
                 val gyms = fetchNearbyGyms(gpsLat, gpsLng)
@@ -268,13 +278,13 @@ class GymMapViewModel(private val context: Context) : ViewModel() {
              * out center tags = gives a lat/lng centre for ways & relations.
              */
             val query = """
-                [out:json][timeout:30];
+                [out:json][timeout:15];
                 (
-                  nwr["leisure"~"^(fitness_centre|health_club)${'$'}"](around:7000,$lat,$lng);
-                  nwr["amenity"~"^(gym|fitness_centre)${'$'}"](around:7000,$lat,$lng);
-                  nwr["sport"~"fitness|bodybuilding|crossfit|weightlifting"](around:7000,$lat,$lng);
-                  nwr["leisure"="sports_centre"]["sport"~"fitness|bodybuilding|crossfit"](around:7000,$lat,$lng);
-                  nwr["name"~"gym|fitness|posilovna|crossfit|fitcentrum|fitnes",i](around:7000,$lat,$lng);
+                  nwr["leisure"~"^(fitness_centre|health_club)${'$'}"](around:5000,$lat,$lng);
+                  nwr["amenity"~"^(gym|fitness_centre)${'$'}"](around:5000,$lat,$lng);
+                  nwr["sport"~"fitness|bodybuilding|crossfit|weightlifting"](around:5000,$lat,$lng);
+                  nwr["leisure"="sports_centre"]["sport"~"fitness|bodybuilding|crossfit"](around:5000,$lat,$lng);
+                  nwr["name"~"gym|fitness|posilovna|crossfit|fitcentrum|fitnes",i](around:5000,$lat,$lng);
                 );
                 out center tags;
             """.trimIndent()

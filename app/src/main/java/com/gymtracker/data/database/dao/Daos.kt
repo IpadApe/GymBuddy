@@ -4,6 +4,14 @@ import androidx.room.*
 import com.gymtracker.data.database.entities.*
 import kotlinx.coroutines.flow.Flow
 
+/** Projection: the most recent completed set for an exercise (for the library "last used" line). */
+data class LastExerciseSet(
+    val exerciseId: Long,
+    val weight: Double,
+    val reps: Int,
+    val completedAt: Long?
+)
+
 // ═══════════════════════════════════════════════════════════════
 // EXERCISE DAO
 // ═══════════════════════════════════════════════════════════════
@@ -202,6 +210,20 @@ interface WorkoutSetDao {
         ORDER BY ws.weight DESC LIMIT 1
     """)
     suspend fun getMaxWeightForExercise(exerciseId: Long): WorkoutSetEntity?
+
+    /**
+     * Latest completed set per exercise. SQLite returns the weight/reps from the same
+     * row that holds MAX(completedAt), so each row is the most-recent set for that exercise.
+     */
+    @Query("""
+        SELECT we.exerciseId AS exerciseId, ws.weight AS weight, ws.reps AS reps,
+               MAX(ws.completedAt) AS completedAt
+        FROM workout_sets ws
+        INNER JOIN workout_exercises we ON ws.workoutExerciseId = we.id
+        WHERE ws.isCompleted = 1 AND ws.completedAt IS NOT NULL
+        GROUP BY we.exerciseId
+    """)
+    fun getLastCompletedSetPerExercise(): Flow<List<LastExerciseSet>>
 
     @Query("""
         SELECT ws.* FROM workout_sets ws

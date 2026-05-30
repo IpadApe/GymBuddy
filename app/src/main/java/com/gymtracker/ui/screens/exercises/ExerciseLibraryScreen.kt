@@ -53,6 +53,18 @@ class ExerciseLibraryViewModel(app: GymTrackerApp) : ViewModel() {
     private val _state = MutableStateFlow(ExerciseLibraryState())
     val state: StateFlow<ExerciseLibraryState> = _state.asStateFlow()
 
+    /** exerciseId → "60 kg × 8" (or "× 12" for bodyweight), from the most recent completed set. */
+    val lastUsed: StateFlow<Map<Long, String>> = combine(
+        repo.getLastSetPerExercise(),
+        repo.getPreferences()
+    ) { map, prefs ->
+        val metric = prefs?.useMetric ?: true
+        map.mapValues { (_, s) ->
+            if (s.weight > 0.0) "${com.gymtracker.util.FormatUtils.formatWeight(s.weight, metric)} × ${s.reps}"
+            else "× ${s.reps}"
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
     init {
         loadExercises()
     }
@@ -144,6 +156,7 @@ fun ExerciseLibraryScreen(
     viewModel: ExerciseLibraryViewModel = viewModel(factory = ExerciseLibraryViewModelFactory())
 ) {
     val state by viewModel.state.collectAsState()
+    val lastUsed by viewModel.lastUsed.collectAsState()
     var showCreateDialog by remember { mutableStateOf(false) }
 
     if (showCreateDialog) {
@@ -289,7 +302,8 @@ fun ExerciseLibraryScreen(
                         muscleGroup = exercise.primaryMuscleGroup,
                         equipment = exercise.equipmentType,
                         difficulty = exercise.difficulty,
-                        onClick = { onExerciseClick(exercise.id) }
+                        onClick = { onExerciseClick(exercise.id) },
+                        lastUsed = lastUsed[exercise.id]
                     )
                 }
                 item { Spacer(modifier = Modifier.height(16.dp)) }

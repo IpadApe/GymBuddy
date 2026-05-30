@@ -135,6 +135,7 @@ fun ExerciseCard(
     difficulty: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    lastUsed: String? = null,
     trailing: @Composable (() -> Unit)? = null
 ) {
     Card(
@@ -170,6 +171,17 @@ fun ExerciseCard(
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     ChipLabel(muscleGroup, getMuscleColor(muscleGroup))
                     ChipLabel(equipment, MaterialTheme.colorScheme.secondary)
+                }
+                if (lastUsed != null) {
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        "Last: $lastUsed",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
             if (trailing != null) {

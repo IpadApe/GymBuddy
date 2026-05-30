@@ -103,6 +103,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     @Suppress("UNUSED_VALUE")
     var showPlateCalc by remember { mutableStateOf(false) }
+    var showRestPicker by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -162,7 +163,8 @@ fun SettingsScreen(
             SettingsValue(
                 icon = Icons.Filled.Timer,
                 title = "Default Rest Time",
-                value = FormatUtils.formatDuration(p.defaultRestTimeSeconds)
+                value = FormatUtils.formatDuration(p.defaultRestTimeSeconds),
+                onClick = { showRestPicker = true }
             )
         }
 
@@ -384,6 +386,71 @@ fun SettingsScreen(
     if (showPlateCalc) {
         PlateCalculatorDialog(useMetric = p.useMetric, onDismiss = { showPlateCalc = false })
     }
+
+    if (showRestPicker) {
+        RestTimePickerDialog(
+            current = p.defaultRestTimeSeconds,
+            onConfirm = { seconds ->
+                viewModel.updatePrefs { it.copy(defaultRestTimeSeconds = seconds) }
+                showRestPicker = false
+            },
+            onDismiss = { showRestPicker = false }
+        )
+    }
+}
+
+@Composable
+fun RestTimePickerDialog(current: Int, onConfirm: (Int) -> Unit, onDismiss: () -> Unit) {
+    var selected by remember { mutableStateOf(current) }
+    val presets = listOf(30, 45, 60, 90, 120, 150, 180, 240, 300)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Default Rest Time", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Rest timer that starts after each completed set.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    FormatUtils.formatDuration(selected),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(presets) { sec ->
+                        val isSel = sec == selected
+                        Box(
+                            modifier = Modifier
+                                .background(
+                                    if (isSel) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.surfaceVariant,
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .clickable { selected = sec }
+                                .padding(horizontal = 16.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                FormatUtils.formatDuration(sec),
+                                fontWeight = FontWeight.Bold,
+                                color = if (isSel) MaterialTheme.colorScheme.onPrimary
+                                        else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { selected = (selected - 15).coerceAtLeast(5) }) { Text("−15s") }
+                    OutlinedButton(onClick = { selected = (selected + 15).coerceAtMost(600) }) { Text("+15s") }
+                }
+            }
+        },
+        confirmButton = { Button(onClick = { onConfirm(selected) }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }
 
 @Composable
@@ -412,10 +479,11 @@ fun SettingsToggle(
 }
 
 @Composable
-fun SettingsValue(icon: ImageVector, title: String, value: String) {
+fun SettingsValue(icon: ImageVector, title: String, value: String, onClick: (() -> Unit)? = null) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        modifier = if (onClick != null) Modifier.clickable { onClick() } else Modifier
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -425,6 +493,10 @@ fun SettingsValue(icon: ImageVector, title: String, value: String) {
             Spacer(modifier = Modifier.width(16.dp))
             Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+            if (onClick != null) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Filled.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }

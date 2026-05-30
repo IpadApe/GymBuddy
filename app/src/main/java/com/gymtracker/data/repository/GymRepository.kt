@@ -154,6 +154,11 @@ class GymRepository(private val db: AppDatabase) {
     fun getSetHistory(exerciseId: Long): Flow<List<WorkoutSetEntity>> =
         db.workoutSetDao().getSetHistoryForExercise(exerciseId)
 
+    /** Latest completed set per exercise, keyed by exerciseId — for the library "last used" line. */
+    fun getLastSetPerExercise(): Flow<Map<Long, com.gymtracker.data.database.dao.LastExerciseSet>> =
+        db.workoutSetDao().getLastCompletedSetPerExercise()
+            .map { list -> list.associateBy { it.exerciseId } }
+
     suspend fun addSet(workoutExerciseId: Long, setNumber: Int, setType: String = "Working"): Long {
         return db.workoutSetDao().insertSet(
             WorkoutSetEntity(
@@ -745,7 +750,24 @@ class GymRepository(private val db: AppDatabase) {
             "Pad Work (Counter Punching)",
             "Boxing Burpee",
             "Plank with Punches",
-            "Medicine Ball Rotational Throw"
+            "Medicine Ball Rotational Throw",
+            // ── Cardio / Olympic / Plyometric / Strongman ──
+            "Treadmill Running",
+            "Elliptical Trainer",
+            "Jumping Jacks",
+            "High Knees",
+            "Clean and Jerk",
+            "Snatch",
+            "Hang Clean",
+            "Push Jerk",
+            "Hang Snatch",
+            "Clean Pull",
+            "Box Jump",
+            "Broad Jump",
+            "Step-Up",
+            "Wall Ball",
+            "Tire Flip",
+            "Atlas Stone Lift"
         )
         newNames.forEach { name ->
             if (db.exerciseDao().getExerciseByName(name) == null) {

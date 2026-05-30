@@ -4,9 +4,11 @@ import android.app.*
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.media.RingtoneManager
 import android.os.*
 import androidx.core.app.NotificationCompat
 import com.gymtracker.GymTrackerApp
+import kotlinx.coroutines.runBlocking
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
@@ -215,19 +217,39 @@ class RestTimerService : Service() {
     }
 
     private fun onTimerComplete() {
-        vibrator?.let {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                it.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 300, 200, 300), -1))
-            } else {
-                @Suppress("DEPRECATION")
-                it.vibrate(longArrayOf(0, 300, 200, 300), -1)
+        // Respect user preferences for sound + vibration.
+        val prefs = try {
+            runBlocking { GymTrackerApp.instance.repository.getPreferencesSync() }
+        } catch (_: Exception) { null }
+        val soundEnabled = prefs?.soundEnabled ?: true
+        val vibrationEnabled = prefs?.vibrationEnabled ?: true
+
+        if (vibrationEnabled) {
+            vibrator?.let {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    it.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 300, 200, 300), -1))
+                } else {
+                    @Suppress("DEPRECATION")
+                    it.vibrate(longArrayOf(0, 300, 200, 300), -1)
+                }
             }
+        }
+
+        // Play an audible alarm/notification tone so the user knows rest is over even with screen off.
+        if (soundEnabled) {
+            try {
+                val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                RingtoneManager.getRingtone(applicationContext, uri)?.play()
+            } catch (_: Exception) { /* ignore audio errors */ }
         }
 
         val doneNotification = NotificationCompat.Builder(this, GymTrackerApp.CHANNEL_REST_TIMER)
             .setContentTitle("Rest Complete!")
             .setContentText("Time to hit your next set 💪")
             .setSmallIcon(android.R.drawable.ic_media_play)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setAutoCancel(true)
             .build()
 
